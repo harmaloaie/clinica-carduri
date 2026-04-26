@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Clinica Central</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+:root {
+  --ink: #0f1117; --paper: #f8f6f1; --cream: #ede9e0;
+  --accent: #c8392b; --gold: #b8973a; --green: #1a6b3c; --radius: 2px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+.topbar {
+  background: var(--ink); color: var(--paper);
+  padding: 16px 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px;
+}
+.topbar .brand { font-family: 'DM Serif Display', serif; font-size: 22px; letter-spacing: -0.01em; }
+.topbar .brand em { color: var(--gold); font-style: italic; }
+.topbar .nav { display: flex; gap: 4px; align-items: center; }
+.topbar .nav a {
+  padding: 8px 14px; color: rgba(248,246,241,0.7); text-decoration: none;
+  font-size: 13px; font-weight: 500; border-radius: var(--radius);
+}
+.topbar .nav a:hover { background: rgba(248,246,241,0.1); color: white; }
+.topbar .nav a.active { background: var(--accent); color: white; }
+.topbar .user { display: flex; align-items: center; gap: 12px; font-size: 12px; color: rgba(248,246,241,0.6); }
+.topbar .logout-btn {
+  background: rgba(248,246,241,0.08);
+  border: 1px solid rgba(248,246,241,0.15);
+  color: rgba(248,246,241,0.8);
+  padding: 6px 12px; border-radius: var(--radius);
+  cursor: pointer; font-family: inherit; font-size: 11px;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+.topbar .logout-btn:hover { background: rgba(248,246,241,0.15); color: white; }
+
+.wrap { max-width: 1280px; margin: 0 auto; padding: 32px 24px 60px; }
+
+.section-head {
+  display: flex; align-items: baseline; gap: 16px; margin-bottom: 24px;
+  border-bottom: 1px solid rgba(15, 17, 23, 0.15); padding-bottom: 16px;
+  flex-wrap: wrap;
+}
+.section-head h1 {
+  font-family: 'DM Serif Display', serif; font-size: 36px;
+  letter-spacing: -0.02em; line-height: 1;
+}
+.section-head h1 em { font-style: italic; color: var(--accent); }
+.section-head .actions { margin-left: auto; display: flex; gap: 8px; }
+
+.btn-sm {
+  padding: 8px 16px; background: white;
+  border: 1.5px solid var(--ink); border-radius: var(--radius);
+  font-family: inherit; font-size: 12px;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  font-weight: 600; cursor: pointer;
+}
+.btn-sm:hover { background: var(--ink); color: white; }
+.btn-sm.primary { background: var(--ink); color: white; }
+.btn-sm.primary:hover { background: var(--accent); border-color: var(--accent); }
+
+.search {
+  background: white;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 4px 4px 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.search input {
+  flex: 1; border: none; outline: none;
+  font-family: inherit; font-size: 14px; padding: 10px 0;
+  background: transparent;
+}
+
+.table-wrap {
+  background: white;
+  border: 1px solid rgba(15, 17, 23, 0.12);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; }
+thead { background: var(--cream); border-bottom: 1px solid rgba(15, 17, 23, 0.12); }
+th {
+  text-align: left; padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  font-weight: 600; color: rgba(15, 17, 23, 0.7);
+  white-space: nowrap;
+}
+td { padding: 12px 14px; border-bottom: 1px solid rgba(15, 17, 23, 0.06); font-size: 13px; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cream); }
+
+.cod { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.discount-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: var(--gold);
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.row-actions {
+  display: flex; gap: 4px;
+  justify-content: flex-end;
+}
+.row-actions button {
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid rgba(15, 17, 23, 0.2);
+  border-radius: var(--radius);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+}
+.row-actions button:hover { background: var(--ink); color: white; border-color: var(--ink); }
+
+/* Modal */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(15,17,23,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: white;
+  border-radius: var(--radius);
+  max-width: 500px;
+  width: 100%;
+  padding: 32px 28px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.modal h2 em { font-style: italic; color: var(--accent); }
+.modal .help { font-size: 13px; color: rgba(15,17,23,0.6); margin-bottom: 20px; }
+.field { margin-bottom: 16px; }
+.field label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+  font-weight: 600; margin-bottom: 8px;
+  color: rgba(15, 17, 23, 0.7);
+}
+.field label .opt { font-weight: 400; color: rgba(15,17,23,0.4); text-transform: none; letter-spacing: 0; }
+.field input, .field select {
+  width: 100%; padding: 10px 12px;
+  font-family: inherit; font-size: 14px;
+  border: 1.5px solid rgba(15, 17, 23, 0.2);
+  border-radius: var(--radius);
+  background: var(--paper); outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--ink); background: white; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.modal-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 20px; padding-top: 20px;
+  border-top: 1px solid rgba(15,17,23,0.1);
+}
+.btn {
+  padding: 10px 20px; border: none; border-radius: var(--radius);
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer;
+}
+.btn-primary { background: var(--ink); color: white; }
+.btn-primary:hover { background: var(--accent); }
+.btn-ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+.btn-ghost:hover { background: var(--ink); color: white; }
+
+/* ─── QR Modal sections ─── */
+.qr-section {
+  background: var(--paper);
+  border: 1px solid rgba(15,17,23,0.1);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.qr-section-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.qr-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 24px;
+  color: var(--gold);
+  font-style: italic;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.qr-section-head strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+.qr-section-head span {
+  font-size: 12px;
+  color: rgba(15,17,23,0.55);
+}
+
+.qr-url-box {
+  background: white;
+  border: 1px solid rgba(15,17,23,0.15);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.qr-url-box code {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink);
+  word-break: break-all;
+  line-height: 1.4;
+}
+.qr-copy-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background: var(--ink);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.qr-copy-btn:hover { background: var(--accent); }
+.qr-copy-btn.copied { background: var(--green); }
+
+.qr-external-link {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.qr-external-link:hover { text-decoration: underline; }
+
+.qr-display {
+  text-align: center;
+  padding: 12px 0;
+  background: white;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.qr-display canvas {
+  border: 1px solid rgba(15,17,23,0.08);
+  border-radius: 4px;
+}
+.qr-actions-row {
+  display: flex;
+  gap: 8px;
+}
+.qr-actions-row .btn {
+  flex: 1;
+}
+
+.banner-error {
+  background: rgba(200, 57, 43, 0.1);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 10px 14px; border-radius: var(--radius);
+  margin-bottom: 14px; font-size: 13px;
+  display: none;
+}
+.banner-error.show { display: block; }
+
+.empty { text-align: center; padding: 60px 20px; color: rgba(15, 17, 23, 0.4); }
+.empty h3 { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--ink); margin-bottom: 8px; }
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px 20px; color: rgba(15, 17, 23, 0.5);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  letter-spacing: 0.1em;
+}
+.loading::before {
+  content: ""; width: 14px; height: 14px;
+  border: 2px solid rgba(15, 17, 23, 0.15); border-top-color: var(--ink);
+  border-radius: 50%; margin-right: 10px;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .topbar { padding: 12px 16px; }
+  .wrap { padding: 24px 16px; }
+  .section-head h1 { font-size: 26px; }
+  .row2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Clinica <em>Central</em></div>
+  <nav class="nav">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="admin.html" class="active">Admin</a>
+  </nav>
+  <div class="user">
+    <span id="userEmail">—</span>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <div class="section-head">
+    <h1>Pacienți & <em>carduri</em></h1>
+    <div class="actions">
+      <button class="btn-sm" id="reloadBtn">↻ Reîncarcă</button>
+      <button class="btn-sm primary" id="addBtn">+ Adaugă pacient</button>
+    </div>
+  </div>
+
+  <div class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="text" id="searchInput" placeholder="Caută după nume, telefon sau cod card...">
+  </div>
+
+  <div id="loading" class="loading">Se încarcă pacienții...</div>
+
+  <div class="table-wrap" id="tableWrap" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>Pacient</th>
+          <th>Cod card</th>
+          <th>Discount</th>
+          <th>Telefon</th>
+          <th>CNP</th>
+          <th>Card emis</th>
+          <th style="text-align:right">Acțiuni</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<!-- Modal: Add/Edit Pacient -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">Pacient <em>nou</em></h2>
+    <p class="help">Completează datele și apasă Salvează. Codul de card se generează automat dacă e gol.</p>
+
+    <div class="banner-error" id="modalError"></div>
+
+    <form id="pacientForm" autocomplete="off">
+      <input type="hidden" id="pId">
+
+      <div class="row2">
+        <div class="field">
+          <label>Prenume *</label>
+          <input type="text" id="pPrenume" required>
+        </div>
+        <div class="field">
+          <label>Nume *</label>
+          <input type="text" id="pNume" required>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Telefon <span class="opt">opțional</span></label>
+          <input type="tel" id="pTelefon" placeholder="07XX XXX XXX">
+        </div>
+        <div class="field">
+          <label>Email <span class="opt">opțional</span></label>
+          <input type="email" id="pEmail">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>CNP <span class="opt">opțional, pentru factură</span></label>
+          <input type="text" id="pCNP" maxlength="13" pattern="[0-9]{13}" placeholder="13 cifre">
+        </div>
+        <div class="field">
+          <label>Discount % *</label>
+          <select id="pDiscount" required>
+            <option value="2.5">2.5% — Bronze</option>
+            <option value="5">5% — Silver</option>
+            <option value="7.5" selected>7.5% — Gold</option>
+            <option value="10">10% — Platinum</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Cod card <span class="opt">lasă gol pentru auto-generare</span></label>
+        <input type="text" id="pCodCard" placeholder="CC-XXXX-XXXX" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="modalCancel">Anulează</button>
+        <button type="submit" class="btn btn-primary" id="modalSave">Salvează</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: QR Display -->
+<div class="modal-bg" id="qrModalBg">
+  <div class="modal" style="max-width:560px">
+    <h2>Card <em>generat</em></h2>
+    <p class="help" id="qrHelp">—</p>
+
+    <!-- ─── SECȚIUNEA 1: URL pentru qr.io ─── -->
+    <div class="qr-section">
+      <div class="qr-section-head">
+        <span class="qr-num">01</span>
+        <div>
+          <strong>URL pentru qr.io</strong>
+          <span>Pentru QR personalizat cu logo & culori</span>
+        </div>
+      </div>
+      <div class="qr-url-box">
+        <code id="qrUrl">—</code>
+        <button type="button" class="qr-copy-btn" id="qrCopyBtn" title="Copiază URL">
+          📋 Copiază
+        </button>
+      </div>
+      <a href="https://qr.io" target="_blank" rel="noopener" class="qr-external-link">
+        Deschide qr.io în tab nou →
+      </a>
+    </div>
+
+    <!-- ─── SECȚIUNEA 2: QR generat local ─── -->
+    <div class="qr-section">
+      <div class="qr-section-head">
+        <span class="qr-num">02</span>
+        <div>
+          <strong>QR generat instant</strong>
+          <span>Pentru tipărire rapidă, fără personalizare</span>
+        </div>
+      </div>
+      <div class="qr-display">
+        <canvas id="qrCanvas"></canvas>
+      </div>
+      <div class="qr-actions-row">
+        <button type="button" class="btn btn-ghost" id="qrDownloadBtn">⬇ Descarcă PNG</button>
+        <button type="button" class="btn btn-ghost" id="qrPrintBtn">🖨 Tipărește</button>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="border-top:1px solid rgba(15,17,23,0.1);padding-top:16px;margin-top:20px">
+      <button type="button" class="btn btn-primary" id="qrCloseBtn" style="margin-left:auto">Închide</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared/config.js"></script>
+<script src="shared/supabase-client.js"></script>
+<script>
+var allPacienti = [];
+var currentEditId = null;
+
+(async function init() {
+  var profile = await Clinica.requireAdmin();
+  if (!profile) return;
+  document.getElementById("userEmail").textContent = profile.email;
+  await loadPacienti();
+})();
+
+async function loadPacienti() {
+  document.getElementById("loading").style.display = "flex";
+  document.getElementById("tableWrap").style.display = "none";
+
+  var { data, error } = await Clinica.listPacienti();
+  document.getElementById("loading").style.display = "none";
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  allPacienti = data || [];
+  document.getElementById("tableWrap").style.display = "block";
+  renderPacienti(allPacienti);
+}
+
+function renderPacienti(list) {
+  var tbody = document.getElementById("tbody");
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty"><h3>Niciun pacient</h3>Apasă „+ Adaugă pacient" pentru a începe.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(function(p) {
+    return '<tr>' +
+      '<td><strong>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '</strong>' +
+        (p.email ? '<br><span style="font-size:11px;color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(p.email) + '</span>' : '') +
+      '</td>' +
+      '<td class="cod">' + Clinica.escapeHtml(p.cod_card) + '</td>' +
+      '<td><span class="discount-badge">' + p.discount_pct + '%</span></td>' +
+      '<td>' + Clinica.escapeHtml(p.telefon || "—") + '</td>' +
+      '<td class="cod" style="font-size:11px">' + Clinica.escapeHtml(p.cnp || "—") + '</td>' +
+      '<td>' + Clinica.escapeHtml(p.data_emitere_card || "—") + '</td>' +
+      '<td><div class="row-actions">' +
+        '<button data-act="qr" data-id="' + p.id + '">QR</button>' +
+        '<button data-act="copy" data-id="' + p.id + '">Copy URL</button>' +
+        '<button data-act="edit" data-id="' + p.id + '">Edit</button>' +
+      '</div></td>' +
+    '</tr>';
+  }).join("");
+
+  // Bind row actions
+  tbody.querySelectorAll("button[data-act]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var id = btn.dataset.id;
+      var p = allPacienti.find(function(x) { return x.id === id; });
+      if (!p) return;
+      if (btn.dataset.act === "qr") showQR(p);
+      else if (btn.dataset.act === "copy") copyURL(p);
+      else if (btn.dataset.act === "edit") openEditModal(p);
+    });
+  });
+}
+
+function buildCardURL(codCard) {
+  return window.location.origin + window.location.pathname.replace(/admin\.html$/, "card.html") + "?id=" + codCard;
+}
+
+// Search
+document.getElementById("searchInput").addEventListener("input", function(e) {
+  var q = e.target.value.toLowerCase().trim();
+  if (!q) { renderPacienti(allPacienti); return; }
+  var filtered = allPacienti.filter(function(p) {
+    return (p.nume || "").toLowerCase().indexOf(q) >= 0 ||
+           (p.prenume || "").toLowerCase().indexOf(q) >= 0 ||
+           (p.cod_card || "").toLowerCase().indexOf(q) >= 0 ||
+           (p.telefon || "").indexOf(q) >= 0;
+  });
+  renderPacienti(filtered);
+});
+
+// Add modal
+document.getElementById("addBtn").addEventListener("click", function() {
+  currentEditId = null;
+  document.getElementById("modalTitle").innerHTML = 'Pacient <em>nou</em>';
+  document.getElementById("pacientForm").reset();
+  document.getElementById("pId").value = "";
+  document.getElementById("modalBg").classList.add("show");
+});
+
+function openEditModal(p) {
+  currentEditId = p.id;
+  document.getElementById("modalTitle").innerHTML = 'Editare <em>pacient</em>';
+  document.getElementById("pId").value = p.id;
+  document.getElementById("pPrenume").value = p.prenume || "";
+  document.getElementById("pNume").value = p.nume || "";
+  document.getElementById("pTelefon").value = p.telefon || "";
+  document.getElementById("pEmail").value = p.email || "";
+  document.getElementById("pCNP").value = p.cnp || "";
+  document.getElementById("pDiscount").value = p.discount_pct;
+  document.getElementById("pCodCard").value = p.cod_card || "";
+  document.getElementById("modalBg").classList.add("show");
+}
+
+document.getElementById("modalCancel").addEventListener("click", function() {
+  document.getElementById("modalBg").classList.remove("show");
+});
+
+document.getElementById("pacientForm").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+
+  var btn = document.getElementById("modalSave");
+  btn.disabled = true; btn.textContent = "Se salvează...";
+
+  var codCard = document.getElementById("pCodCard").value.trim().toUpperCase();
+  if (!codCard) {
+    codCard = await Clinica.generateCodCard();
+  }
+
+  var payload = {
+    cod_card: codCard,
+    prenume: document.getElementById("pPrenume").value.trim(),
+    nume: document.getElementById("pNume").value.trim(),
+    telefon: document.getElementById("pTelefon").value.trim() || null,
+    email: document.getElementById("pEmail").value.trim() || null,
+    cnp: document.getElementById("pCNP").value.trim() || null,
+    discount_pct: parseFloat(document.getElementById("pDiscount").value)
+  };
+
+  var result;
+  if (currentEditId) {
+    result = await Clinica.updatePacient(currentEditId, payload);
+  } else {
+    result = await Clinica.createPacient(payload);
+  }
+
+  btn.disabled = false; btn.textContent = "Salvează";
+
+  if (result.error) {
+    var err = document.getElementById("modalError");
+    err.textContent = "Eroare: " + (result.error.message || "necunoscută");
+    err.classList.add("show");
+    return;
+  }
+
+  document.getElementById("modalBg").classList.remove("show");
+  await loadPacienti();
+
+  // Show QR for new patient
+  if (!currentEditId && result.data) {
+    showQR(result.data);
+  }
+});
+
+// QR
+function showQR(p) {
+  var url = buildCardURL(p.cod_card);
+  document.getElementById("qrHelp").innerHTML =
+    '<strong>' + Clinica.escapeHtml(p.prenume + " " + p.nume) + '</strong> · ' +
+    '<span class="cod">' + Clinica.escapeHtml(p.cod_card) + '</span> · ' +
+    '<span style="color:var(--gold);font-weight:700">' + p.discount_pct + '% discount</span>';
+  document.getElementById("qrUrl").textContent = url;
+  document.getElementById("qrModalBg").classList.add("show");
+
+  var canvas = document.getElementById("qrCanvas");
+  QRCode.toCanvas(canvas, url, { width: 240, margin: 2 }, function(err) {
+    if (err) console.error(err);
+  });
+
+  // Copy URL button
+  document.getElementById("qrCopyBtn").onclick = function() {
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById("qrCopyBtn");
+      btn.classList.add("copied");
+      btn.textContent = "✓ Copiat!";
+      setTimeout(function() {
+        btn.classList.remove("copied");
+        btn.textContent = "📋 Copiază";
+      }, 1800);
+    });
+  };
+
+  // Download PNG
+  document.getElementById("qrDownloadBtn").onclick = function() {
+    var link = document.createElement("a");
+    link.download = "qr-" + p.cod_card + ".png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  // Print
+  document.getElementById("qrPrintBtn").onclick = function() {
+    var imgData = canvas.toDataURL("image/png");
+    var w = window.open("", "_blank", "width=400,height=600");
+    w.document.write(
+      '<html><head><title>Card ' + Clinica.escapeHtml(p.cod_card) + '</title>' +
+      '<style>body{margin:0;padding:30px;font-family:sans-serif;text-align:center}' +
+      'h2{font-size:18px;margin:10px 0}' +
+      '.cod{font-family:monospace;font-size:14px;color:#666;margin-bottom:10px}' +
+      'img{display:block;margin:0 auto;max-width:100%}' +
+      '.discount{font-size:36px;font-weight:bold;color:#b8973a;margin:10px 0;font-style:italic}' +
+      '@media print{body{padding:10px}}</style></head><body>' +
+      '<h2>' + Clinica.escapeHtml(p.prenume + " " + p.nume) + '</h2>' +
+      '<div class="cod">' + Clinica.escapeHtml(p.cod_card) + '</div>' +
+      '<img src="' + imgData + '" alt="QR Code">' +
+      '<div class="discount">' + p.discount_pct + '% discount</div>' +
+      '<script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>' +
+      '</body></html>'
+    );
+    w.document.close();
+  };
+}
+
+document.getElementById("qrCloseBtn").addEventListener("click", function() {
+  document.getElementById("qrModalBg").classList.remove("show");
+});
+
+function copyURL(p) {
+  var url = buildCardURL(p.cod_card);
+  navigator.clipboard.writeText(url).then(function() {
+    alert("URL copiat: " + url);
+  });
+}
+
+document.getElementById("reloadBtn").addEventListener("click", loadPacienti);
+
+document.getElementById("logoutBtn").addEventListener("click", async function() {
+  await Clinica.signOut();
+  window.location.href = "login.html";
+});
+
+// Click outside modal to close
+document.getElementById("modalBg").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
+});
+document.getElementById("qrModalBg").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
+});
+</script>
+</body>
+</html>

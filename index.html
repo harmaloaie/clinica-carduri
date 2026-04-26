@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinica Central — Sistem Carduri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117; --paper: #f8f6f1; --cream: #ede9e0;
+  --accent: #c8392b; --gold: #b8973a; --green: #1a6b3c;
+  --radius: 2px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 720px; width: 100%; }
+
+.head {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.brand-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.5);
+}
+.brand-bar::before, .brand-bar::after {
+  content: '';
+  flex: 0 0 80px;
+  height: 1px;
+  background: rgba(15, 17, 23, 0.15);
+}
+h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(40px, 6vw, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+h1 em { font-style: italic; color: var(--accent); }
+.subtitle {
+  font-size: 16px;
+  color: rgba(15, 17, 23, 0.6);
+  line-height: 1.5;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+@media (max-width: 600px) {
+  .options { grid-template-columns: 1fr; }
+}
+
+.option {
+  background: white;
+  border: 1.5px solid rgba(15,17,23,0.12);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: all 0.2s;
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+.option::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s;
+}
+.option-admin::before { background: var(--accent); }
+.option-partener::before { background: var(--gold); }
+
+.option:hover {
+  border-color: var(--ink);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px -12px rgba(15,17,23,0.18);
+}
+.option:hover::before { transform: scaleX(1); }
+
+.option .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.5);
+  margin-bottom: 16px;
+  display: block;
+}
+.option-admin .label { color: var(--accent); }
+.option-partener .label { color: var(--gold); }
+
+.option h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.option h3 em { font-style: italic; }
+.option-admin h3 em { color: var(--accent); }
+.option-partener h3 em { color: var(--gold); }
+
+.option p {
+  font-size: 13px;
+  color: rgba(15, 17, 23, 0.55);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.option .arrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.option-admin .arrow { color: var(--accent); }
+.option-partener .arrow { color: var(--gold); }
+
+.foot {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(15, 17, 23, 0.4);
+  letter-spacing: 0.05em;
+}
+.foot em { color: var(--accent); font-style: italic; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="head">
+    <div class="brand-bar"><span>Sistem Intern</span></div>
+    <h1>Carduri <em>fidelitate</em></h1>
+    <p class="subtitle">Sistem de gestionare carduri QR cu discount-uri pentru pacienți. Selectează tipul tău de cont pentru a continua.</p>
+  </header>
+
+  <nav class="options">
+    <a href="login.html?type=admin" class="option option-admin">
+      <span class="label">Administrator</span>
+      <h3>Login <em>admin</em></h3>
+      <p>Acces complet: gestionare pacienți, generare carduri QR, rapoarte și statistici globale.</p>
+      <span class="arrow">Continuă →</span>
+    </a>
+
+    <a href="login.html?type=partener" class="option option-partener">
+      <span class="label">Partener</span>
+      <h3>Login <em>partener</em></h3>
+      <p>Acces pentru clinici/laboratoare partenere: scanare QR pacienți și înregistrare tranzacții.</p>
+      <span class="arrow">Continuă →</span>
+    </a>
+  </nav>
+
+  <p class="foot">
+    Clinica <em>Central</em> · Toate drepturile rezervate
+  </p>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared/config.js"></script>
+<script src="shared/supabase-client.js"></script>
+<script>
+// Auto-redirect dacă userul e deja logat
+(async function() {
+  var type = await Clinica.getUserType();
+  if (type === "admin") {
+    window.location.href = "dashboard.html";
+  } else if (type === "partener") {
+    window.location.href = "partener.html";
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Fidelitate · Clinica Central</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117; --paper: #f8f6f1; --cream: #ede9e0;
+  --accent: #c8392b; --gold: #b8973a; --green: #1a6b3c;
+  --radius: 2px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper); color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.topbar {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.topbar .partener-info {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgba(248,246,241,0.6);
+}
+.topbar .partener-info strong {
+  color: var(--gold);
+  font-weight: 600;
+}
+.topbar .logout-btn {
+  background: rgba(248,246,241,0.08);
+  border: 1px solid rgba(248,246,241,0.15);
+  color: rgba(248,246,241,0.8);
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.wrap { max-width: 600px; margin: 0 auto; padding: 24px 20px 60px; }
+
+.card-loading, .card-error {
+  background: white;
+  border: 1.5px solid rgba(15, 17, 23, 0.12);
+  border-radius: var(--radius);
+  padding: 60px 24px;
+  text-align: center;
+}
+.card-loading {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(15, 17, 23, 0.6);
+}
+.card-loading::before {
+  content: ""; width: 14px; height: 14px;
+  border: 2px solid rgba(15, 17, 23, 0.15); border-top-color: var(--ink);
+  border-radius: 50%; display: inline-block; vertical-align: middle;
+  margin-right: 10px; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.card-error h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 24px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.card-error p { color: rgba(15, 17, 23, 0.6); font-size: 14px; line-height: 1.5; }
+
+.card {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: radial-gradient(circle at top right, rgba(184,151,58,0.15), transparent 60%);
+  pointer-events: none;
+}
+.card .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(248, 246, 241, 0.5);
+  margin-bottom: 12px;
+}
+.card .name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+  margin-bottom: 24px;
+}
+.card .discount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  position: relative;
+  padding-top: 20px;
+  border-top: 1px solid rgba(248, 246, 241, 0.15);
+}
+.card .discount-pct {
+  font-family: 'DM Serif Display', serif;
+  font-size: 56px;
+  font-style: italic;
+  color: var(--gold);
+  line-height: 1;
+}
+.card .discount-label { font-size: 14px; color: rgba(248, 246, 241, 0.7); }
+.card .discount-label strong { display: block; color: var(--paper); }
+.card .cod {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: rgba(248, 246, 241, 0.5);
+  position: absolute;
+  bottom: 28px;
+  right: 28px;
+}
+
+.form-section {
+  background: white;
+  border: 1.5px solid rgba(15, 17, 23, 0.12);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+}
+.form-section h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.form-section .help {
+  font-size: 13px;
+  color: rgba(15, 17, 23, 0.6);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.partener-tag {
+  background: rgba(184, 151, 58, 0.12);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  font-size: 12px;
+}
+.partener-tag .lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(15,17,23,0.55);
+  margin-bottom: 2px;
+}
+.partener-tag strong {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--gold);
+}
+
+.field { margin-bottom: 18px; }
+.field label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: rgba(15, 17, 23, 0.7);
+}
+.field label .opt {
+  font-weight: 400;
+  color: rgba(15, 17, 23, 0.4);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.field input, .field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  border: 1.5px solid rgba(15, 17, 23, 0.2);
+  border-radius: var(--radius);
+  background: var(--paper);
+  outline: none;
+}
+.field input:focus, .field textarea:focus {
+  border-color: var(--ink);
+  background: white;
+}
+.field textarea { resize: vertical; min-height: 70px; }
+
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.computed-row {
+  background: var(--cream);
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.computed-row .lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.6);
+}
+.computed-row .val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--green);
+}
+.computed-row .economie {
+  display: block;
+  font-size: 11px;
+  color: rgba(15, 17, 23, 0.5);
+  font-family: 'DM Sans', sans-serif;
+  font-style: italic;
+}
+
+.btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn:hover { background: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.success-card {
+  background: var(--green);
+  color: white;
+  padding: 32px 24px;
+  border-radius: var(--radius);
+  text-align: center;
+}
+.success-card .check { font-size: 48px; margin-bottom: 16px; display: block; }
+.success-card h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  font-style: italic;
+  margin-bottom: 8px;
+}
+.success-card .ref {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.7);
+  margin-top: 16px;
+}
+.success-card .actions { margin-top: 20px; display: flex; gap: 8px; justify-content: center; }
+.success-card .btn-link {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.3);
+  cursor: pointer;
+}
+.success-card .btn-link:hover { background: rgba(255,255,255,0.25); }
+
+.banner-error {
+  background: rgba(200, 57, 43, 0.1);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-size: 13px;
+  display: none;
+}
+.banner-error.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="partener-info">Logat ca: <strong id="partenerName">—</strong></div>
+  <button class="logout-btn" id="logoutBtn">Logout</button>
+</div>
+
+<div class="wrap">
+
+  <div id="cardLoading" class="card-loading">Se încarcă datele cardului...</div>
+
+  <div id="cardError" class="card-error" style="display:none">
+    <h2>Card neidentificat</h2>
+    <p id="cardErrorMsg">—</p>
+  </div>
+
+  <div id="cardDisplay" style="display:none">
+    <div class="card">
+      <div class="label">Pacient</div>
+      <div class="name" id="cardName">—</div>
+      <div class="discount-row">
+        <span class="discount-pct" id="cardDiscount">—</span>
+        <span class="discount-label">discount<strong>la toți partenerii</strong></span>
+      </div>
+      <div class="cod" id="cardCod">—</div>
+    </div>
+
+    <div id="successDisplay" class="success-card" style="display:none">
+      <span class="check">✓</span>
+      <h3>Tranzacție înregistrată</h3>
+      <p>Datele au fost salvate cu succes.</p>
+      <div class="ref" id="successRef">—</div>
+      <div class="actions">
+        <button class="btn-link" onclick="window.location.href='partener.html'">Vezi tranzacții</button>
+      </div>
+    </div>
+
+    <div id="formDisplay" class="form-section">
+      <h3>Înregistrare tranzacție</h3>
+      <p class="help">Completează datele de mai jos după aplicarea discountului.</p>
+
+      <div class="banner-error" id="errorBox"></div>
+
+      <div class="partener-tag">
+        <div class="lbl">Tranzacția va fi înregistrată la:</div>
+        <strong id="partenerDenumire">—</strong>
+      </div>
+
+      <form id="txForm" autocomplete="off">
+
+        <div class="field">
+          <label>Servicii / analize <span class="opt">opțional</span></label>
+          <input type="text" id="fServicii" placeholder="ex. RMN cerebral cu contrast">
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Sumă inițială (RON) *</label>
+            <input type="number" id="fPretLista" required min="0" step="0.01" placeholder="0,00">
+          </div>
+          <div class="field">
+            <label>Sumă plătită cu discount (RON) *</label>
+            <input type="number" id="fPretPlatit" required min="0" step="0.01" placeholder="0,00">
+          </div>
+        </div>
+
+        <div class="computed-row" id="computedBox" style="display:none">
+          <div><div class="lbl">Economie</div></div>
+          <div class="val" id="computedSavings">—
+            <span class="economie" id="computedPct">—</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Mențiuni <span class="opt">opțional</span></label>
+          <textarea id="fMentiuni" placeholder="Observații, detalii suplimentare..."></textarea>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">Înregistrează tranzacția →</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared/config.js"></script>
+<script src="shared/supabase-client.js"></script>
+<script>
+var pacient = null;
+var partenerProfile = null;
+
+(async function init() {
+  // Necesită login partener
+  partenerProfile = await Clinica.requirePartener();
+  if (!partenerProfile) return;
+
+  // Update topbar
+  document.getElementById("partenerName").textContent =
+    partenerProfile.parteneri.denumire;
+
+  // Update partner tag in form
+  document.getElementById("partenerDenumire").textContent =
+    partenerProfile.parteneri.denumire;
+
+  // Logout button
+  document.getElementById("logoutBtn").addEventListener("click", async function() {
+    await Clinica.signOut();
+    window.location.href = "index.html";
+  });
+
+  await loadCard();
+})();
+
+async function loadCard() {
+  var params = new URLSearchParams(window.location.search);
+  var codCard = (params.get("id") || "").toUpperCase().trim();
+
+  if (!codCard) {
+    showError("URL invalid. Scanează QR-ul corect de pe card.");
+    return;
+  }
+
+  var { data, error } = await Clinica.getPacientPublic(codCard);
+  if (error || !data) {
+    console.error(error);
+    showError("Codul \"" + codCard + "\" nu există sau cardul nu este activ.");
+    return;
+  }
+
+  pacient = data;
+  document.getElementById("cardLoading").style.display = "none";
+  document.getElementById("cardDisplay").style.display = "block";
+  document.getElementById("cardName").textContent = pacient.prenume + " " + pacient.nume;
+  document.getElementById("cardDiscount").textContent = pacient.discount_pct + "%";
+  document.getElementById("cardCod").textContent = pacient.cod_card;
+}
+
+function showError(msg) {
+  document.getElementById("cardLoading").style.display = "none";
+  document.getElementById("cardError").style.display = "block";
+  document.getElementById("cardErrorMsg").textContent = msg;
+}
+
+function showFormError(msg) {
+  var b = document.getElementById("errorBox");
+  b.textContent = msg;
+  b.classList.add("show");
+  setTimeout(function() { b.classList.remove("show"); }, 8000);
+}
+
+// Live compute savings
+function recomputeSavings() {
+  var pl = parseFloat(document.getElementById("fPretLista").value) || 0;
+  var pp = parseFloat(document.getElementById("fPretPlatit").value) || 0;
+  var box = document.getElementById("computedBox");
+
+  if (pl > 0 && pp >= 0 && pp <= pl) {
+    var econ = pl - pp;
+    var pct = ((econ / pl) * 100).toFixed(1);
+    box.style.display = "flex";
+    document.getElementById("computedSavings").firstChild.textContent = Clinica.formatRON(econ);
+    document.getElementById("computedPct").textContent = pct + "% reducere aplicată";
+  } else {
+    box.style.display = "none";
+  }
+}
+document.getElementById("fPretLista").addEventListener("input", recomputeSavings);
+document.getElementById("fPretPlatit").addEventListener("input", recomputeSavings);
+
+// Submit
+document.getElementById("txForm").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+
+  var servicii = document.getElementById("fServicii").value.trim();
+  var pretLista = parseFloat(document.getElementById("fPretLista").value);
+  var pretPlatit = parseFloat(document.getElementById("fPretPlatit").value);
+  var mentiuni = document.getElementById("fMentiuni").value.trim();
+
+  if (!pretLista || pretLista <= 0) { showFormError("Suma inițială invalidă."); return; }
+  if (pretPlatit == null || pretPlatit < 0) { showFormError("Suma plătită invalidă."); return; }
+  if (pretPlatit > pretLista) { showFormError("Suma plătită nu poate fi mai mare decât cea inițială."); return; }
+
+  var btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "Se înregistrează...";
+
+  var payload = {
+    cod_referinta: Clinica.generateTxRef(),
+    pacient_id: pacient.id,
+    partener_id: partenerProfile.partener_id,
+    procesata_de: partenerProfile.id,
+    servicii: servicii || null,
+    mentiuni: mentiuni || null,
+    pret_lista: pretLista,
+    pret_platit: pretPlatit,
+    discount_pct_aplicat: pacient.discount_pct
+  };
+
+  var { data, error } = await Clinica.createTranzactie(payload);
+  if (error) {
+    console.error(error);
+    showFormError("Eroare: " + (error.message || "necunoscută"));
+    btn.disabled = false;
+    btn.textContent = "Înregistrează tranzacția →";
+    return;
+  }
+
+  document.getElementById("formDisplay").style.display = "none";
+  document.getElementById("successDisplay").style.display = "block";
+  document.getElementById("successRef").textContent = data.cod_referinta;
+});
+</script>
+</body>
+</html>

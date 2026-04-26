@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partener · Clinica Central</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117; --paper: #f8f6f1; --cream: #ede9e0;
+  --accent: #c8392b; --gold: #b8973a; --green: #1a6b3c;
+  --radius: 2px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+.topbar {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 3px solid var(--gold);
+}
+.topbar .brand {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.topbar .brand em { color: var(--gold); font-style: italic; }
+.topbar .partener-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgba(248,246,241,0.6);
+  text-transform: uppercase;
+}
+.topbar .partener-tag strong { color: var(--gold); font-weight: 700; }
+.topbar .user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(248,246,241,0.6);
+}
+.topbar .logout-btn {
+  background: rgba(248,246,241,0.08);
+  border: 1px solid rgba(248,246,241,0.15);
+  color: rgba(248,246,241,0.8);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.topbar .logout-btn:hover { background: rgba(248,246,241,0.15); color: white; }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 60px; }
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(15, 17, 23, 0.15);
+  padding-bottom: 16px;
+}
+.section-head h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.section-head h1 em { font-style: italic; color: var(--gold); }
+.section-head .actions { margin-left: auto; display: flex; gap: 8px; }
+
+.btn-sm {
+  padding: 8px 16px;
+  background: white;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-sm:hover { background: var(--ink); color: white; }
+.btn-sm.primary { background: var(--ink); color: white; }
+.btn-sm.primary:hover { background: var(--accent); border-color: var(--accent); }
+
+/* Welcome card */
+.welcome {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 28px 32px;
+  border-radius: var(--radius);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.welcome::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 50%, rgba(184,151,58,0.18), transparent 60%);
+  pointer-events: none;
+}
+.welcome h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  position: relative;
+}
+.welcome h2 em { color: var(--gold); font-style: italic; }
+.welcome p {
+  color: rgba(248,246,241,0.7);
+  font-size: 14px;
+  line-height: 1.6;
+  position: relative;
+  margin-bottom: 16px;
+}
+.welcome .scan-info {
+  background: rgba(248,246,241,0.08);
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  position: relative;
+  font-size: 13px;
+  color: rgba(248,246,241,0.85);
+}
+.welcome .scan-info code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(248,246,241,0.12);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--gold);
+}
+
+/* KPIs */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.kpi {
+  background: white;
+  border: 1px solid rgba(15, 17, 23, 0.12);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+.kpi .lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.5);
+  margin-bottom: 8px;
+}
+.kpi .val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.kpi .val.green { color: var(--green); }
+.kpi .val em { font-style: italic; color: var(--gold); }
+
+/* Filters */
+.filter-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-row label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.6);
+}
+.filter-row input[type=date] {
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  border: 1px solid rgba(15, 17, 23, 0.2);
+  border-radius: var(--radius);
+  background: white;
+  outline: none;
+}
+
+/* Table */
+.table-wrap {
+  background: white;
+  border: 1px solid rgba(15, 17, 23, 0.12);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; }
+thead { background: var(--cream); border-bottom: 1px solid rgba(15, 17, 23, 0.12); }
+th {
+  text-align: left;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(15, 17, 23, 0.7);
+  white-space: nowrap;
+}
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(15, 17, 23, 0.06);
+  font-size: 13px;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cream); }
+.cod { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.empty { text-align: center; padding: 60px 20px; color: rgba(15, 17, 23, 0.4); }
+.empty h3 { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--ink); margin-bottom: 8px; }
+
+.status-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.status-tag.inregistrat { background: rgba(184, 151, 58, 0.15); color: var(--gold); }
+.status-tag.confirmat   { background: rgba(26, 107, 60, 0.15); color: var(--green); }
+.status-tag.facturat    { background: rgba(26, 61, 107, 0.15); color: #1a3d6b; }
+.status-tag.incasat     { background: rgba(26, 107, 60, 0.25); color: var(--green); }
+.status-tag.anulat      { background: rgba(200, 57, 43, 0.15); color: var(--accent); }
+
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px 20px; color: rgba(15, 17, 23, 0.5);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  letter-spacing: 0.1em;
+}
+.loading::before {
+  content: ""; width: 14px; height: 14px;
+  border: 2px solid rgba(15, 17, 23, 0.15); border-top-color: var(--ink);
+  border-radius: 50%; margin-right: 10px;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .topbar { padding: 12px 16px; }
+  .topbar .brand { font-size: 18px; }
+  .wrap { padding: 24px 16px 40px; }
+  .section-head h1 { font-size: 26px; }
+  .welcome { padding: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Clinica <em>Central</em></div>
+  <div class="partener-tag">Partener: <strong id="partenerName">—</strong></div>
+  <div class="user">
+    <span id="userEmail">—</span>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <div class="welcome">
+    <h2>Bun venit, <em id="welcomePartener">Partener</em></h2>
+    <p>Aici vezi toate tranzacțiile înregistrate la unitatea ta. Pentru a înregistra o tranzacție nouă, scanează QR-ul de pe cardul pacientului.</p>
+    <div class="scan-info">
+      📱 <strong>Cum scanezi:</strong> deschide camera telefonului și apropie de QR-ul de pe card. Linkul te duce direct la pagina cardului în formatul <code>card.html?id=CC-XXXX</code>.
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h1>Tranzacții <em>înregistrate</em></h1>
+    <div class="actions">
+      <button class="btn-sm" id="reloadBtn">↻ Reîncarcă</button>
+      <button class="btn-sm primary" id="exportBtn">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Tranzacții</div><div class="val" id="kTxCount">—</div></div>
+    <div class="kpi"><div class="lbl">Total încasat</div><div class="val" id="kTotalPlatit">—</div></div>
+    <div class="kpi"><div class="lbl">Discount aplicat</div><div class="val green" id="kTotalEconomie">—</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
+    <label>De la:</label>
+    <input type="date" id="fFrom">
+    <label>Până la:</label>
+    <input type="date" id="fTo">
+  </div>
+
+  <!-- Table -->
+  <div id="loadingTx" class="loading">Se încarcă tranzacțiile...</div>
+  <div class="table-wrap" id="txWrap" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Cod ref</th>
+          <th>Pacient</th>
+          <th>Card</th>
+          <th>Servicii</th>
+          <th style="text-align:right">Listă</th>
+          <th style="text-align:right">Plătit</th>
+          <th style="text-align:right">Discount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="txTbody"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared/config.js"></script>
+<script src="shared/supabase-client.js"></script>
+<script>
+var allTx = [];
+var partenerProfile = null;
+
+(async function init() {
+  partenerProfile = await Clinica.requirePartener();
+  if (!partenerProfile) return;
+
+  document.getElementById("userEmail").textContent = partenerProfile.email;
+  document.getElementById("partenerName").textContent = partenerProfile.parteneri.denumire;
+  document.getElementById("welcomePartener").textContent = partenerProfile.parteneri.denumire;
+
+  await loadTranzactii();
+})();
+
+async function loadTranzactii() {
+  document.getElementById("loadingTx").style.display = "flex";
+  document.getElementById("txWrap").style.display = "none";
+
+  var filters = {};
+  var from = document.getElementById("fFrom").value;
+  var to = document.getElementById("fTo").value;
+  if (from) filters.from = from + "T00:00:00";
+  if (to) filters.to = to + "T23:59:59";
+
+  var { data, error } = await Clinica.listTranzactiiPartener(filters);
+  document.getElementById("loadingTx").style.display = "none";
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  allTx = data || [];
+
+  // KPIs
+  var totalPlatit = 0, totalEcon = 0;
+  allTx.forEach(function(t) {
+    if (t.status === "anulat") return;
+    totalPlatit += parseFloat(t.pret_platit) || 0;
+    totalEcon += parseFloat(t.economie) || 0;
+  });
+  document.getElementById("kTxCount").textContent = allTx.length;
+  document.getElementById("kTotalPlatit").textContent = Clinica.formatRON(totalPlatit);
+  document.getElementById("kTotalEconomie").textContent = Clinica.formatRON(totalEcon);
+
+  // Table
+  var tbody = document.getElementById("txTbody");
+  document.getElementById("txWrap").style.display = "block";
+
+  if (!allTx.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty"><h3>Fără tranzacții</h3>Scanează un QR de pe cardul unui pacient pentru a începe.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allTx.map(function(t) {
+    var p = t.pacienti || {};
+    return '<tr>' +
+      '<td>' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
+      '<td class="cod">' + Clinica.escapeHtml(t.cod_referinta) + '</td>' +
+      '<td><strong>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '</strong></td>' +
+      '<td class="cod">' + Clinica.escapeHtml(p.cod_card || "—") + '</td>' +
+      '<td style="font-size:12px">' + Clinica.escapeHtml(t.servicii || "—") + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace">' + Clinica.formatRON(t.pret_lista) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:var(--green)">' + Clinica.formatRON(t.economie) + '</td>' +
+      '<td><span class="status-tag ' + Clinica.escapeHtml(t.status) + '">' + Clinica.escapeHtml(t.status) + '</span></td>' +
+    '</tr>';
+  }).join("");
+}
+
+// Filters
+["fFrom", "fTo"].forEach(function(id) {
+  document.getElementById(id).addEventListener("change", loadTranzactii);
+});
+
+document.getElementById("reloadBtn").addEventListener("click", loadTranzactii);
+
+// Export CSV
+document.getElementById("exportBtn").addEventListener("click", function() {
+  if (!allTx.length) { alert("Nu sunt tranzacții de exportat"); return; }
+  var headers = ["Data", "Cod ref", "Pacient", "Card", "Servicii", "Pret lista", "Pret platit", "Discount %", "Economie", "Status"];
+  var rows = allTx.map(function(t) {
+    var p = t.pacienti || {};
+    return [
+      Clinica.formatDate(t.created_at),
+      t.cod_referinta,
+      ((p.prenume || "") + " " + (p.nume || "")).trim(),
+      p.cod_card || "",
+      t.servicii || "",
+      t.pret_lista,
+      t.pret_platit,
+      t.discount_pct_aplicat,
+      t.economie,
+      t.status
+    ].map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(",");
+  });
+  var csv = headers.join(",") + "\n" + rows.join("\n");
+  var blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  var partnerCode = partenerProfile.parteneri.cod || "partener";
+  a.download = "tranzactii-" + partnerCode + "-" + new Date().toISOString().slice(0, 10) + ".csv";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Logout
+document.getElementById("logoutBtn").addEventListener("click", async function() {
+  await Clinica.signOut();
+  window.location.href = "index.html";
+});
+</script>
+</body>
+</html>
