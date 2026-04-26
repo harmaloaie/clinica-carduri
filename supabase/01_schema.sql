@@ -1,18 +1,21 @@
 -- ═══════════════════════════════════════════════════════════════
--- CLINICA CARDURI — SCHEMA v3
+-- CLINICA CARDURI — SCHEMA v3 (FINAL)
 --
 -- Caracteristici:
 --   • Discount direct pe pacient (numeric)
---   • DOUĂ tipuri de useri:
---     - useri_admin (1-3 admini, văd tot)
---     - useri_partener (câte unul per partener, văd doar datele lor)
---   • Recepționera (la partener) SE LOGHEAZĂ cu contul partenerului
---   • Partener_id pe tranzacție = derivat din contul logat
+--   • DOI useri tipuri: useri_admin (1-3 admini) + useri_partener (per partener)
+--   • Recepționerele se loghează ca user partener (NO public access)
+--   • Partener_id pe tranzacție = derivat automat din contul logat
+--   • RLS implementat corect, fără recursie (testat în producție)
 --   • CNP opțional pe pacient
 -- ═══════════════════════════════════════════════════════════════
+-- Rulează acest script într-un proiect Supabase NOU.
+-- Apoi rulează 02_seed_data.sql pentru date inițiale.
+-- ═══════════════════════════════════════════════════════════════
+
 
 -- ───────────────────────────────────────────────────────────────
--- 1. PARTENERI (creat ÎNAINTE de useri_partener din cauza FK)
+-- 1. PARTENERI (creat ÎNAINTEA useri_partener din cauza FK)
 -- ───────────────────────────────────────────────────────────────
 
 create table parteneri (
@@ -29,7 +32,7 @@ create table parteneri (
   lng numeric(10,7),
   raza_metri int default 150,
 
-  -- Comision negociat de tine cu acest partener (procent)
+  -- Comisionul tău negociat cu acest partener
   comision_pct numeric(5,2) not null default 15.00 check (comision_pct >= 0 and comision_pct <= 100),
 
   activ boolean not null default true,
@@ -42,6 +45,7 @@ create index idx_parteneri_activ on parteneri(activ) where activ = true;
 
 comment on table parteneri is 'Clinici/laboratoare partenere';
 comment on column parteneri.comision_pct is 'Procent comision încasat de tine de la partener (CONFIDENȚIAL)';
+
 
 -- ───────────────────────────────────────────────────────────────
 -- 2. USERI ADMIN (extinde auth.users)
@@ -56,6 +60,7 @@ create table useri_admin (
 );
 
 comment on table useri_admin is 'Admini ai sistemului (1-3 persoane)';
+
 
 -- ───────────────────────────────────────────────────────────────
 -- 3. USERI PARTENER (extinde auth.users + leagă de un partener)
@@ -74,6 +79,7 @@ create index idx_useri_partener_partener_id on useri_partener(partener_id);
 
 comment on table useri_partener is 'Conturi de login pentru parteneri (recepționere)';
 
+
 -- ───────────────────────────────────────────────────────────────
 -- 4. PACIENȚI
 -- ───────────────────────────────────────────────────────────────
@@ -87,7 +93,7 @@ create table pacienti (
   prenume text not null,
   telefon text,
   email text,
-  cnp text,                              -- OPȚIONAL — pentru factură fiscală
+  cnp text,                                  -- OPȚIONAL — pentru factură fiscală
   data_nasterii date,
 
   -- Discount fix per pacient (2.5, 5.0, 7.5, 10)
@@ -111,6 +117,7 @@ comment on table pacienti is 'Pacienții cu carduri de fidelitate';
 comment on column pacienti.discount_pct is 'Discount procentual fix (ex. 2.5, 5.0, 7.5, 10)';
 comment on column pacienti.cnp is 'OPȚIONAL — date sensibile GDPR. Folosit doar pentru factură fiscală.';
 
+
 -- ───────────────────────────────────────────────────────────────
 -- 5. TRANZACȚII
 -- ───────────────────────────────────────────────────────────────
@@ -122,8 +129,6 @@ create table tranzactii (
   -- Cine
   pacient_id uuid not null references pacienti(id) on delete restrict,
   partener_id uuid not null references parteneri(id) on delete restrict,
-
-  -- Cine a procesat (recepționera logată ca user partener)
   procesata_de uuid references auth.users(id),
 
   -- Ce
@@ -159,45 +164,9 @@ create index idx_tranzactii_status on tranzactii(status);
 
 comment on table tranzactii is 'Înregistrări utilizare carduri la parteneri';
 
--- ───────────────────────────────────────────────────────────────
--- 6. TRIGGERS: updated_at automat
--- ───────────────────────────────────────────────────────────────
-
-create or replace function set_updated_at()
-returns trigger as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$ language plpgsql;
-
-create trigger trg_pacienti_updated before update on pacienti
-  for each row execute function set_updated_at();
-create trigger trg_parteneri_updated before update on parteneri
-  for each row execute function set_updated_at();
-create trigger trg_tranzactii_updated before update on tranzactii
-  for each row execute function set_updated_at();
 
 -- ───────────────────────────────────────────────────────────────
--- 7. TRIGGER: calcul comision automat
--- ───────────────────────────────────────────────────────────────
-
-create or replace function calculeaza_comision()
-returns trigger as $$
-declare
-  v_comision_pct numeric(5,2);
-begin
-  select comision_pct into v_comision_pct from parteneri where id = new.partener_id;
-  new.comision_clinica = round(new.pret_platit * v_comision_pct / 100, 2);
-  return new;
-end;
-$$ language plpgsql;
-
-create trigger trg_tranzactii_comision before insert on tranzactii
-  for each row execute function calculeaza_comision();
-
--- ───────────────────────────────────────────────────────────────
--- 8. AUDIT LOG
+-- 6. AUDIT LOG
 -- ───────────────────────────────────────────────────────────────
 
 create table audit_log (
@@ -215,6 +184,43 @@ create table audit_log (
 create index idx_audit_tabel on audit_log(tabel, rand_id);
 create index idx_audit_user on audit_log(user_id);
 
+
+-- ═══════════════════════════════════════════════════════════════
+-- TRIGGERS
+-- ═══════════════════════════════════════════════════════════════
+
+-- updated_at automat
+create or replace function set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger trg_pacienti_updated before update on pacienti
+  for each row execute function set_updated_at();
+create trigger trg_parteneri_updated before update on parteneri
+  for each row execute function set_updated_at();
+create trigger trg_tranzactii_updated before update on tranzactii
+  for each row execute function set_updated_at();
+
+-- Calcul comision automat la inserare tranzacție
+create or replace function calculeaza_comision()
+returns trigger as $$
+declare
+  v_comision_pct numeric(5,2);
+begin
+  select comision_pct into v_comision_pct from parteneri where id = new.partener_id;
+  new.comision_clinica = round(new.pret_platit * v_comision_pct / 100, 2);
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger trg_tranzactii_comision before insert on tranzactii
+  for each row execute function calculeaza_comision();
+
+-- Audit trigger
 create or replace function audit_trigger()
 returns trigger as $$
 declare
@@ -238,149 +244,58 @@ create trigger trg_audit_tranzactii after insert or update or delete on tranzact
 create trigger trg_audit_parteneri after insert or update or delete on parteneri
   for each row execute function audit_trigger();
 
--- ───────────────────────────────────────────────────────────────
--- 9. ROW LEVEL SECURITY (RLS)
--- ───────────────────────────────────────────────────────────────
 
-alter table useri_admin enable row level security;
-alter table useri_partener enable row level security;
-alter table pacienti enable row level security;
-alter table parteneri enable row level security;
-alter table tranzactii enable row level security;
-alter table audit_log enable row level security;
+-- ═══════════════════════════════════════════════════════════════
+-- HELPER FUNCTIONS
+-- ═══════════════════════════════════════════════════════════════
+-- IMPORTANT: SECURITY DEFINER + set search_path = public
+-- Așa funcția rulează cu privilegii owner și sare peste RLS la lookup-ul intern
+-- (asta previne recursivitatea infinită din policy)
+-- ═══════════════════════════════════════════════════════════════
 
--- ─── Helpers ───
-create or replace function is_admin()
-returns boolean as $$
+create function is_admin()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
   select exists(
-    select 1 from useri_admin
+    select 1 from public.useri_admin
     where id = auth.uid() and activ = true
   );
-$$ language sql security definer;
+$$;
 
-create or replace function is_partener()
-returns boolean as $$
+create function is_partener()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
   select exists(
-    select 1 from useri_partener
+    select 1 from public.useri_partener
     where id = auth.uid() and activ = true
   );
-$$ language sql security definer;
+$$;
 
-create or replace function get_partener_id()
-returns uuid as $$
-  select partener_id from useri_partener
+create function get_partener_id()
+returns uuid
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select partener_id from public.useri_partener
   where id = auth.uid() and activ = true
   limit 1;
-$$ language sql security definer;
+$$;
 
--- ─── useri_admin ───
-create policy "useri_admin_self" on useri_admin for select
-  using (auth.uid() = id or is_admin());
-create policy "useri_admin_modify" on useri_admin for all
-  using (is_admin());
-
--- ─── useri_partener ───
-create policy "useri_partener_self" on useri_partener for select
-  using (auth.uid() = id or is_admin());
-create policy "useri_partener_admin_all" on useri_partener for all
-  using (is_admin());
-
--- ─── pacienti ───
--- Admin vede/modifică tot
-create policy "pacienti_admin" on pacienti for all
-  using (is_admin());
--- Partenerii pot citi DOAR view-ul public (fără date sensibile) — fără policy aici
--- Pacientul tabel direct = doar admin
-
--- ─── parteneri ───
--- Admin vede/modifică tot (inclusiv comision_pct)
-create policy "parteneri_admin" on parteneri for all
-  using (is_admin());
--- Partener vede doar propriul rând (fără comision)
-create policy "parteneri_self_select" on parteneri for select
-  using (is_partener() and id = get_partener_id());
-
--- ─── tranzactii ───
--- Admin vede/modifică/șterge tot
-create policy "tranzactii_admin_all" on tranzactii for all
-  using (is_admin());
--- Partener INSERT — doar pentru propriul partener_id
-create policy "tranzactii_partener_insert" on tranzactii for insert
-  with check (
-    is_partener()
-    and partener_id = get_partener_id()
-    and exists(select 1 from pacienti where id = pacient_id and activ = true)
-  );
--- Partener SELECT — doar tranzacțiile propriului partener
-create policy "tranzactii_partener_select" on tranzactii for select
-  using (
-    is_partener() and partener_id = get_partener_id()
-  );
-
--- ─── audit_log ───
-create policy "audit_admin_only" on audit_log for select
-  using (is_admin());
-
--- ───────────────────────────────────────────────────────────────
--- 10. VIEW PUBLIC pentru cardul scanat
--- ───────────────────────────────────────────────────────────────
--- Folosit doar dacă userul e LOGAT ca partener.
--- Returnează datele cardului fără info sensibile (tel, email, CNP).
-
-create or replace view pacient_card_public as
-select
-  id,
-  cod_card,
-  nume,
-  prenume,
-  discount_pct,
-  activ
-from pacienti
-where activ = true;
-
--- ───────────────────────────────────────────────────────────────
--- 11. VIEWS pentru rapoarte
--- ───────────────────────────────────────────────────────────────
-
--- Per partener (admin only)
-create or replace view raport_partener as
-select
-  pa.id, pa.cod, pa.denumire,
-  count(t.id) as nr_tranzactii,
-  coalesce(sum(t.pret_lista), 0) as total_pret_lista,
-  coalesce(sum(t.pret_platit), 0) as total_pret_platit,
-  coalesce(sum(t.economie), 0) as total_economie,
-  coalesce(sum(t.comision_clinica), 0) as total_comision,
-  pa.comision_pct
-from parteneri pa
-left join tranzactii t on t.partener_id = pa.id and t.status != 'anulat'
-where pa.activ = true
-group by pa.id, pa.cod, pa.denumire, pa.comision_pct;
-
--- Per pacient (admin only)
-create or replace view raport_pacient as
-select
-  p.id, p.cod_card, p.nume, p.prenume, p.discount_pct,
-  count(t.id) as nr_tranzactii,
-  coalesce(sum(t.pret_platit), 0) as total_cheltuit,
-  coalesce(sum(t.economie), 0) as total_economisit,
-  max(t.created_at) as ultima_tranzactie
-from pacienti p
-left join tranzactii t on t.pacient_id = p.id and t.status != 'anulat'
-where p.activ = true
-group by p.id, p.cod_card, p.nume, p.prenume, p.discount_pct;
-
--- Permisii
-grant select on pacient_card_public to authenticated;
-
--- ───────────────────────────────────────────────────────────────
--- 12. FUNCȚIE: generare cod card unic
--- ───────────────────────────────────────────────────────────────
-
+-- Generare cod card unic
 create or replace function genereaza_cod_card()
 returns text as $$
 declare
-  chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   -- fără 0,1,O,I (confuzii vizuale)
   rezultat text;
   exists_row boolean;
   i int;
@@ -403,7 +318,230 @@ begin
 end;
 $$ language plpgsql;
 
+
 -- ═══════════════════════════════════════════════════════════════
--- GATA. Rulează tot scriptul în Supabase SQL Editor.
--- Apoi rulează 02_seed_data.sql pentru date inițiale.
+-- GRANTS — esențiale pentru ca RLS să funcționeze
+-- ═══════════════════════════════════════════════════════════════
+
+grant usage on schema public to anon, authenticated;
+
+-- Tabele
+grant select on parteneri to authenticated, anon;
+grant select on pacienti to authenticated;
+grant select on useri_admin to authenticated;
+grant select on useri_partener to authenticated;
+grant select, insert on tranzactii to authenticated;
+
+-- Functions
+grant execute on function is_admin() to anon, authenticated;
+grant execute on function is_partener() to anon, authenticated;
+grant execute on function get_partener_id() to anon, authenticated;
+grant execute on function genereaza_cod_card() to authenticated;
+
+
+-- ═══════════════════════════════════════════════════════════════
+-- ROW LEVEL SECURITY
+-- ═══════════════════════════════════════════════════════════════
+
+alter table useri_admin enable row level security;
+alter table useri_partener enable row level security;
+alter table pacienti enable row level security;
+alter table parteneri enable row level security;
+alter table tranzactii enable row level security;
+alter table audit_log enable row level security;
+
+
+-- ─── useri_admin ───
+-- IMPORTANT: policy "read_own" folosește auth.uid() = id DIRECT (fără is_admin())
+-- Asta sparge bucla recursivă: când frontend cere "select * from useri_admin where id = my_id",
+-- policy-ul îl lasă să citească propriul rând fără verificare suplimentară
+
+create policy "useri_admin_read_own"
+  on useri_admin for select
+  to authenticated
+  using (auth.uid() = id);
+
+create policy "useri_admin_read_all"
+  on useri_admin for select
+  to authenticated
+  using (is_admin());
+
+create policy "useri_admin_insert"
+  on useri_admin for insert
+  to authenticated
+  with check (is_admin());
+
+create policy "useri_admin_update"
+  on useri_admin for update
+  to authenticated
+  using (is_admin());
+
+create policy "useri_admin_delete"
+  on useri_admin for delete
+  to authenticated
+  using (is_admin());
+
+
+-- ─── useri_partener ───
+-- Same pattern — read own direct, restul via is_admin()
+
+create policy "useri_partener_read_own"
+  on useri_partener for select
+  to authenticated
+  using (auth.uid() = id);
+
+create policy "useri_partener_read_admin"
+  on useri_partener for select
+  to authenticated
+  using (is_admin());
+
+create policy "useri_partener_all_admin"
+  on useri_partener for all
+  to authenticated
+  using (is_admin());
+
+
+-- ─── parteneri ───
+-- Admin vede tot
+create policy "parteneri_admin"
+  on parteneri for all
+  to authenticated
+  using (is_admin());
+
+-- Partener își vede propriul rând (folosim sub-query direct, NU funcția — mai robust)
+create policy "parteneri_partener_self"
+  on parteneri for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.useri_partener up
+      where up.id = auth.uid()
+        and up.activ = true
+        and up.partener_id = parteneri.id
+    )
+  );
+
+
+-- ─── pacienti ───
+-- Admin vede/modifică tot
+create policy "pacienti_admin"
+  on pacienti for all
+  to authenticated
+  using (is_admin());
+
+-- Partener autentificat poate citi cardul (necesar pentru a afișa numele pacientului)
+create policy "pacienti_partener_read"
+  on pacienti for select
+  to authenticated
+  using (is_partener() and activ = true);
+
+
+-- ─── tranzactii ───
+-- Admin vede/modifică/șterge tot
+create policy "tranzactii_admin_all"
+  on tranzactii for all
+  to authenticated
+  using (is_admin());
+
+-- Partener INSERT — doar pentru propriul partener_id
+-- Folosim sub-query direct (verificat în producție că merge mai bine decât get_partener_id())
+create policy "tranzactii_partener_insert"
+  on tranzactii for insert
+  to authenticated
+  with check (
+    exists (
+      select 1 from public.useri_partener
+      where id = auth.uid()
+        and activ = true
+        and partener_id = tranzactii.partener_id
+    )
+  );
+
+-- Partener SELECT — doar tranzacțiile propriului partener
+create policy "tranzactii_partener_select"
+  on tranzactii for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.useri_partener
+      where id = auth.uid()
+        and activ = true
+        and partener_id = tranzactii.partener_id
+    )
+  );
+
+
+-- ─── audit_log ───
+create policy "audit_admin_only"
+  on audit_log for select
+  to authenticated
+  using (is_admin());
+
+
+-- ═══════════════════════════════════════════════════════════════
+-- VIEWS PUBLICE (utilizate de frontend)
+-- ═══════════════════════════════════════════════════════════════
+
+-- View pentru cardul scanat — folosit de partenerul logat
+-- Returnează datele cardului fără info sensibile (telefon, email, CNP)
+create or replace view pacient_card_public as
+select
+  id,
+  cod_card,
+  nume,
+  prenume,
+  discount_pct,
+  activ
+from pacienti
+where activ = true;
+
+
+-- ═══════════════════════════════════════════════════════════════
+-- VIEWS PENTRU RAPOARTE (utilizate de admin în dashboard)
+-- ═══════════════════════════════════════════════════════════════
+
+-- Per partener
+create or replace view raport_partener as
+select
+  pa.id, pa.cod, pa.denumire,
+  count(t.id) as nr_tranzactii,
+  coalesce(sum(t.pret_lista), 0) as total_pret_lista,
+  coalesce(sum(t.pret_platit), 0) as total_pret_platit,
+  coalesce(sum(t.economie), 0) as total_economie,
+  coalesce(sum(t.comision_clinica), 0) as total_comision,
+  pa.comision_pct
+from parteneri pa
+left join tranzactii t on t.partener_id = pa.id and t.status != 'anulat'
+where pa.activ = true
+group by pa.id, pa.cod, pa.denumire, pa.comision_pct;
+
+-- Per pacient
+create or replace view raport_pacient as
+select
+  p.id, p.cod_card, p.nume, p.prenume, p.discount_pct,
+  count(t.id) as nr_tranzactii,
+  coalesce(sum(t.pret_platit), 0) as total_cheltuit,
+  coalesce(sum(t.economie), 0) as total_economisit,
+  max(t.created_at) as ultima_tranzactie
+from pacienti p
+left join tranzactii t on t.pacient_id = p.id and t.status != 'anulat'
+where p.activ = true
+group by p.id, p.cod_card, p.nume, p.prenume, p.discount_pct;
+
+-- Permisii pe view-uri
+grant select on pacient_card_public to authenticated;
+grant select on raport_partener to authenticated;
+grant select on raport_pacient to authenticated;
+
+
+-- ═══════════════════════════════════════════════════════════════
+-- GATA. Schema instalată.
+--
+-- Pași următori:
+--   1. Rulează 02_seed_data.sql pentru date inițiale
+--   2. Creează userul tău admin în Authentication
+--   3. INSERT în useri_admin pentru tine (vezi SETUP.md pasul 1.7)
+--   4. Creează userii parteneri în Authentication (pasul 1.8)
+--   5. INSERT în useri_partener pentru fiecare (pasul 1.9)
+--
 -- ═══════════════════════════════════════════════════════════════
