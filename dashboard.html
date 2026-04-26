@@ -135,6 +135,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   line-height: 1;
 }
 .kpi .val.green { color: var(--green); }
+.kpi .val.gold { color: var(--gold); font-style: italic; }
 .kpi .val em { font-style: italic; color: var(--accent); }
 .kpi .sub {
   font-size: 11px;
@@ -296,9 +297,11 @@ tbody tr:hover { background: var(--cream); }
   <!-- KPIs -->
   <div class="kpis">
     <div class="kpi"><div class="lbl">Tranzacții</div><div class="val" id="kTxCount">—</div></div>
-    <div class="kpi"><div class="lbl">Total plătit</div><div class="val" id="kTotalPlatit">—</div></div>
-    <div class="kpi"><div class="lbl">Economii pacienți</div><div class="val green" id="kTotalEconomie">—</div></div>
-    <div class="kpi"><div class="lbl">Comision încasat</div><div class="val"><em id="kTotalComision">—</em></div></div>
+    <div class="kpi"><div class="lbl">Suma totală fără discount</div><div class="val" id="kTotalLista">—</div></div>
+    <div class="kpi"><div class="lbl">Suma totală cu discount</div><div class="val green" id="kTotalPlatit">—</div></div>
+    <div class="kpi"><div class="lbl">Comision total (10%)</div><div class="val" id="kComisionTotal">—</div></div>
+    <div class="kpi"><div class="lbl">Discount oferit pacienți</div><div class="val gold" id="kTotalEconomie">—</div></div>
+    <div class="kpi"><div class="lbl">Profit net (10% − disc.)</div><div class="val"><em id="kProfitNet">—</em></div></div>
   </div>
 
   <!-- Filters -->
@@ -326,13 +329,14 @@ tbody tr:hover { background: var(--cream); }
         <thead>
           <tr>
             <th>Data</th>
-            <th>Cod</th>
             <th>Pacient</th>
             <th>Partener</th>
-            <th>Servicii</th>
-            <th style="text-align:right">Listă</th>
-            <th style="text-align:right">Plătit</th>
-            <th style="text-align:right">Comision</th>
+            <th style="text-align:right">Sumă listă</th>
+            <th style="text-align:right">% Pacient</th>
+            <th style="text-align:right">Discount RON</th>
+            <th style="text-align:right">Pacient plătește</th>
+            <th style="text-align:right">Comision 10%</th>
+            <th style="text-align:right">Profit net</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -436,40 +440,68 @@ async function loadTranzactii() {
 
   allTx = data || [];
 
-  // KPIs
-  var totalPlatit = 0, totalEcon = 0, totalCom = 0;
+  // KPIs — calcul nou cu toate metricile
+  var COMISION_PCT = 10; // 10% fix
+  var totalLista = 0;
+  var totalPlatit = 0;
+  var totalEcon = 0;       // ce a primit pacientul (discount în RON)
+  var totalComision = 0;   // 10% din suma totală listă
+  var totalProfit = 0;     // ce rămâne la tine după ce pacientul ia partea lui
+
   allTx.forEach(function(t) {
     if (t.status === "anulat") return;
-    totalPlatit += parseFloat(t.pret_platit) || 0;
-    totalEcon += parseFloat(t.economie) || 0;
-    totalCom += parseFloat(t.comision_clinica) || 0;
+    var lista = parseFloat(t.pret_lista) || 0;
+    var platit = parseFloat(t.pret_platit) || 0;
+    var econ = lista - platit;
+    var comisionTotal = lista * COMISION_PCT / 100;
+    var profit = Math.max(comisionTotal - econ, 0);
+
+    totalLista += lista;
+    totalPlatit += platit;
+    totalEcon += econ;
+    totalComision += comisionTotal;
+    totalProfit += profit;
   });
+
   document.getElementById("kTxCount").textContent = allTx.length;
+  document.getElementById("kTotalLista").textContent = Clinica.formatRON(totalLista);
   document.getElementById("kTotalPlatit").textContent = Clinica.formatRON(totalPlatit);
+  document.getElementById("kComisionTotal").textContent = Clinica.formatRON(totalComision);
   document.getElementById("kTotalEconomie").textContent = Clinica.formatRON(totalEcon);
-  document.getElementById("kTotalComision").textContent = Clinica.formatRON(totalCom);
+  document.getElementById("kProfitNet").textContent = Clinica.formatRON(totalProfit);
 
   // Table
   var tbody = document.getElementById("txTbody");
   document.getElementById("txWrap").style.display = "block";
 
   if (!allTx.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty"><h3>Fără tranzacții</h3>Schimbă filtrele sau așteaptă să apară primele înregistrări.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty"><h3>Fără tranzacții</h3>Schimbă filtrele sau așteaptă să apară primele înregistrări.</td></tr>';
     return;
   }
 
   tbody.innerHTML = allTx.map(function(t) {
     var p = t.pacienti || {};
     var pa = t.parteneri || {};
+    var lista = parseFloat(t.pret_lista) || 0;
+    var platit = parseFloat(t.pret_platit) || 0;
+    var econ = lista - platit;
+    var comisionTotal = lista * COMISION_PCT / 100;
+    var profit = Math.max(comisionTotal - econ, 0);
+    var profitClass = profit > 0 ? 'color:var(--green);font-weight:700' :
+                      profit === 0 ? 'color:var(--accent);font-weight:600' :
+                      'color:var(--accent)';
+
     return '<tr>' +
       '<td>' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
-      '<td class="cod">' + Clinica.escapeHtml(t.cod_referinta) + '</td>' +
-      '<td>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '<br><span class="cod" style="opacity:0.6">' + Clinica.escapeHtml(p.cod_card || "") + '</span></td>' +
+      '<td><strong>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '</strong>' +
+        '<br><span class="cod" style="opacity:0.6">' + Clinica.escapeHtml(p.cod_card || "") + '</span></td>' +
       '<td>' + Clinica.escapeHtml(pa.denumire || "—") + '</td>' +
-      '<td style="font-size:12px">' + Clinica.escapeHtml(t.servicii || "—") + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace">' + Clinica.formatRON(t.pret_lista) + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:var(--accent)">' + Clinica.formatRON(t.comision_clinica) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace">' + Clinica.formatRON(lista) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:var(--gold);font-weight:700">' + (parseFloat(t.discount_pct_aplicat) || 0).toFixed(1) + '%</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:var(--gold)">−' + Clinica.formatRON(econ) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(platit) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:rgba(15,17,23,0.6)">' + Clinica.formatRON(comisionTotal) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;' + profitClass + '">' + Clinica.formatRON(profit) + '</td>' +
       '<td><span class="status-tag ' + Clinica.escapeHtml(t.status) + '">' + Clinica.escapeHtml(t.status) + '</span></td>' +
     '</tr>';
   }).join("");
@@ -534,9 +566,18 @@ document.getElementById("reloadBtn").addEventListener("click", loadAll);
 // Export CSV
 document.getElementById("exportBtn").addEventListener("click", function() {
   if (!allTx.length) { alert("Nu sunt tranzacții de exportat"); return; }
-  var headers = ["Data", "Cod ref", "Pacient", "Card", "Partener", "Servicii", "Pret lista", "Pret platit", "Discount %", "Comision", "Status"];
+  var COMISION_PCT = 10;
+  var headers = ["Data", "Cod ref", "Pacient", "Card", "Partener", "Servicii",
+                 "Suma lista", "Discount pacient %", "Discount RON", "Pacient platit",
+                 "Comision 10%", "Profit net", "Status"];
   var rows = allTx.map(function(t) {
     var p = t.pacienti || {}, pa = t.parteneri || {};
+    var lista = parseFloat(t.pret_lista) || 0;
+    var platit = parseFloat(t.pret_platit) || 0;
+    var econ = lista - platit;
+    var comisionTotal = lista * COMISION_PCT / 100;
+    var profit = Math.max(comisionTotal - econ, 0);
+
     return [
       Clinica.formatDate(t.created_at),
       t.cod_referinta,
@@ -544,10 +585,12 @@ document.getElementById("exportBtn").addEventListener("click", function() {
       p.cod_card || "",
       pa.denumire || "",
       t.servicii || "",
-      t.pret_lista,
-      t.pret_platit,
+      lista.toFixed(2),
       t.discount_pct_aplicat,
-      t.comision_clinica,
+      econ.toFixed(2),
+      platit.toFixed(2),
+      comisionTotal.toFixed(2),
+      profit.toFixed(2),
       t.status
     ].map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(",");
   });
