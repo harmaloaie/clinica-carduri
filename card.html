@@ -223,33 +223,37 @@ body {
   gap: 12px;
 }
 
-.computed-row {
-  background: var(--cream);
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 20px 0;
 }
-.computed-row .lbl {
+.calc-box {
+  background: var(--cream);
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  text-align: center;
+  border: 1px solid rgba(15, 17, 23, 0.08);
+}
+.calc-box .lbl {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(15, 17, 23, 0.6);
+  color: rgba(15, 17, 23, 0.55);
+  margin-bottom: 6px;
 }
-.computed-row .val {
+.calc-box .val {
   font-family: 'DM Serif Display', serif;
-  font-size: 22px;
-  color: var(--green);
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  line-height: 1;
 }
-.computed-row .economie {
-  display: block;
-  font-size: 11px;
-  color: rgba(15, 17, 23, 0.5);
-  font-family: 'DM Sans', sans-serif;
-  font-style: italic;
+.calc-box .val.gold { color: var(--gold); font-style: italic; }
+.calc-box .val.green { color: var(--green); font-weight: 600; }
+@media (max-width: 480px) {
+  .calc-grid { grid-template-columns: 1fr; }
 }
 
 .btn {
@@ -359,7 +363,7 @@ body {
 
     <div id="formDisplay" class="form-section">
       <h3>Înregistrare tranzacție</h3>
-      <p class="help">Completează datele de mai jos după aplicarea discountului.</p>
+      <p class="help">Completează suma inițială. Discountul pacientului se aplică automat.</p>
 
       <div class="banner-error" id="errorBox"></div>
 
@@ -375,21 +379,20 @@ body {
           <input type="text" id="fServicii" placeholder="ex. RMN cerebral cu contrast">
         </div>
 
-        <div class="row2">
-          <div class="field">
-            <label>Sumă inițială (RON) *</label>
-            <input type="number" id="fPretLista" required min="0" step="0.01" placeholder="0,00">
-          </div>
-          <div class="field">
-            <label>Sumă plătită cu discount (RON) *</label>
-            <input type="number" id="fPretPlatit" required min="0" step="0.01" placeholder="0,00">
-          </div>
+        <div class="field">
+          <label>Sumă inițială (preț listă) — RON *</label>
+          <input type="number" id="fPretLista" required min="0" step="0.01" placeholder="0,00" style="font-size:18px;font-weight:600">
         </div>
 
-        <div class="computed-row" id="computedBox" style="display:none">
-          <div><div class="lbl">Economie</div></div>
-          <div class="val" id="computedSavings">—
-            <span class="economie" id="computedPct">—</span>
+        <!-- Calcul automat afișat în 3 boxe -->
+        <div class="calc-grid" id="calcGrid" style="display:none">
+          <div class="calc-box">
+            <div class="lbl">Discount aplicat</div>
+            <div class="val gold" id="calcDiscount">—</div>
+          </div>
+          <div class="calc-box">
+            <div class="lbl">Pacientul plătește</div>
+            <div class="val green" id="calcPlatit">—</div>
           </div>
         </div>
 
@@ -470,24 +473,27 @@ function showFormError(msg) {
   setTimeout(function() { b.classList.remove("show"); }, 8000);
 }
 
-// Live compute savings
+// Live compute — calculează automat suma cu discount aplicat
+// Discount-ul vine de la pacient, NU de la recepționera (anti-eroare)
 function recomputeSavings() {
   var pl = parseFloat(document.getElementById("fPretLista").value) || 0;
-  var pp = parseFloat(document.getElementById("fPretPlatit").value) || 0;
-  var box = document.getElementById("computedBox");
+  var grid = document.getElementById("calcGrid");
 
-  if (pl > 0 && pp >= 0 && pp <= pl) {
-    var econ = pl - pp;
-    var pct = ((econ / pl) * 100).toFixed(1);
-    box.style.display = "flex";
-    document.getElementById("computedSavings").firstChild.textContent = Clinica.formatRON(econ);
-    document.getElementById("computedPct").textContent = pct + "% reducere aplicată";
+  if (pl > 0 && pacient && pacient.discount_pct != null) {
+    var discountPct = parseFloat(pacient.discount_pct);
+    var econ = Math.round((pl * discountPct / 100) * 100) / 100;  // round la 2 zecimale
+    var platit = Math.round((pl - econ) * 100) / 100;
+
+    grid.style.display = "grid";
+    document.getElementById("calcDiscount").textContent =
+      "−" + Clinica.formatRON(econ);
+    document.getElementById("calcPlatit").textContent =
+      Clinica.formatRON(platit);
   } else {
-    box.style.display = "none";
+    grid.style.display = "none";
   }
 }
 document.getElementById("fPretLista").addEventListener("input", recomputeSavings);
-document.getElementById("fPretPlatit").addEventListener("input", recomputeSavings);
 
 // Submit
 document.getElementById("txForm").addEventListener("submit", async function(ev) {
@@ -495,12 +501,17 @@ document.getElementById("txForm").addEventListener("submit", async function(ev) 
 
   var servicii = document.getElementById("fServicii").value.trim();
   var pretLista = parseFloat(document.getElementById("fPretLista").value);
-  var pretPlatit = parseFloat(document.getElementById("fPretPlatit").value);
   var mentiuni = document.getElementById("fMentiuni").value.trim();
 
-  if (!pretLista || pretLista <= 0) { showFormError("Suma inițială invalidă."); return; }
-  if (pretPlatit == null || pretPlatit < 0) { showFormError("Suma plătită invalidă."); return; }
-  if (pretPlatit > pretLista) { showFormError("Suma plătită nu poate fi mai mare decât cea inițială."); return; }
+  if (!pretLista || pretLista <= 0) {
+    showFormError("Sumă inițială invalidă.");
+    return;
+  }
+
+  // Calculul exact — nu permitem manipulare manuală
+  var discountPct = parseFloat(pacient.discount_pct);
+  var economie = Math.round((pretLista * discountPct / 100) * 100) / 100;
+  var pretPlatit = Math.round((pretLista - economie) * 100) / 100;
 
   var btn = document.getElementById("submitBtn");
   btn.disabled = true;
@@ -515,7 +526,7 @@ document.getElementById("txForm").addEventListener("submit", async function(ev) 
     mentiuni: mentiuni || null,
     pret_lista: pretLista,
     pret_platit: pretPlatit,
-    discount_pct_aplicat: pacient.discount_pct
+    discount_pct_aplicat: discountPct
   };
 
   var { data, error } = await Clinica.createTranzactie(payload);
