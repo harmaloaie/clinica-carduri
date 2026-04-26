@@ -326,11 +326,13 @@ $$ language plpgsql;
 grant usage on schema public to anon, authenticated;
 
 -- Tabele
-grant select on parteneri to authenticated, anon;
-grant select on pacienti to authenticated;
-grant select on useri_admin to authenticated;
-grant select on useri_partener to authenticated;
-grant select, insert on tranzactii to authenticated;
+grant select, insert, update, delete on parteneri to authenticated;
+grant select on parteneri to anon;
+grant select, insert, update, delete on pacienti to authenticated;
+grant select, insert, update, delete on useri_admin to authenticated;
+grant select, insert, update, delete on useri_partener to authenticated;
+grant select, insert, update, delete on tranzactii to authenticated;
+grant select on audit_log to authenticated;
 
 -- Functions
 grant execute on function is_admin() to anon, authenticated;
