@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cardul meu · Clinica Central</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117; --paper: #f8f6f1; --cream: #ede9e0;
+  --accent: #c8392b; --gold: #b8973a; --green: #1a6b3c;
+  --radius: 2px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+.topbar {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 3px solid var(--green);
+}
+.topbar .brand { font-family: 'DM Serif Display', serif; font-size: 22px; letter-spacing: -0.01em; }
+.topbar .brand em { color: var(--green); font-style: italic; }
+.topbar .user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(248,246,241,0.6);
+}
+.topbar .logout-btn {
+  background: rgba(248,246,241,0.08);
+  border: 1px solid rgba(248,246,241,0.15);
+  color: rgba(248,246,241,0.8);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 60px; }
+
+/* CARD MARE */
+.card-hero {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.card-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(184,151,58,0.18), transparent 65%);
+  pointer-events: none;
+}
+.card-hero .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(248,246,241,0.5);
+  margin-bottom: 12px;
+}
+.card-hero .name {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(36px, 5vw, 48px);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin-bottom: 28px;
+  position: relative;
+}
+.card-hero .discount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  position: relative;
+  padding-top: 22px;
+  border-top: 1px solid rgba(248,246,241,0.15);
+}
+.card-hero .discount-pct {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(56px, 8vw, 72px);
+  font-style: italic;
+  color: var(--gold);
+  line-height: 1;
+}
+.card-hero .discount-label { font-size: 14px; color: rgba(248,246,241,0.7); }
+.card-hero .discount-label strong { display: block; color: var(--paper); font-weight: 600; }
+.card-hero .nivel-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(248,246,241,0.1);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  font-weight: 700;
+}
+.card-hero .cod {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: rgba(248,246,241,0.5);
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+}
+@media (max-width: 600px) {
+  .card-hero { padding: 28px 22px; }
+  .card-hero .cod { position: static; margin-top: 14px; }
+}
+
+/* KPIs */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.kpi {
+  background: white;
+  border: 1px solid rgba(15, 17, 23, 0.12);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+.kpi .lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.5);
+  margin-bottom: 8px;
+}
+.kpi .val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.kpi .val.green { color: var(--green); }
+.kpi .val em { font-style: italic; color: var(--gold); }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.tabs .tab {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.5);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+}
+.tabs .tab:hover { color: var(--ink); }
+.tabs .tab.active { color: var(--ink); border-bottom-color: var(--green); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Tabel istoric */
+.table-wrap {
+  background: white;
+  border: 1px solid rgba(15, 17, 23, 0.12);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; }
+thead { background: var(--cream); border-bottom: 1px solid rgba(15, 17, 23, 0.12); }
+th {
+  text-align: left;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(15, 17, 23, 0.7);
+  white-space: nowrap;
+}
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(15, 17, 23, 0.06);
+  font-size: 13px;
+}
+tbody tr:last-child td { border-bottom: none; }
+.cod-mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(15,17,23,0.55); }
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(15, 17, 23, 0.5);
+}
+.empty h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 24px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+/* Oferte */
+.oferte-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+.oferta {
+  background: white;
+  border: 1px solid rgba(15,17,23,0.12);
+  border-radius: var(--radius);
+  padding: 24px 22px;
+  position: relative;
+  transition: all 0.2s;
+  border-left: 4px solid var(--green);
+}
+.oferta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -8px rgba(15,17,23,0.18);
+}
+.oferta h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.oferta p {
+  font-size: 13px;
+  color: rgba(15,17,23,0.65);
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+.oferta .meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: rgba(15,17,23,0.45);
+  text-transform: uppercase;
+}
+.oferta .link {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+}
+.oferta .link:hover { text-decoration: underline; }
+
+/* Profil */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 600px) { .profile-grid { grid-template-columns: 1fr; } }
+.profile-item {
+  background: white;
+  border: 1px solid rgba(15,17,23,0.12);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+.profile-item .lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(15,17,23,0.5);
+  margin-bottom: 6px;
+}
+.profile-item .val {
+  font-size: 15px;
+  font-weight: 500;
+}
+.profile-item .val.empty { color: rgba(15,17,23,0.4); font-style: italic; }
+.profile-note {
+  background: var(--cream);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: rgba(15,17,23,0.65);
+  line-height: 1.5;
+}
+
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px 20px; color: rgba(15, 17, 23, 0.5);
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  letter-spacing: 0.1em;
+}
+.loading::before {
+  content: ""; width: 14px; height: 14px;
+  border: 2px solid rgba(15, 17, 23, 0.15); border-top-color: var(--ink);
+  border-radius: 50%; margin-right: 10px;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Clinica <em>Central</em></div>
+  <div class="user">
+    <span id="userEmail">—</span>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- CARDUL -->
+  <div class="card-hero">
+    <div class="label">Cardul tău</div>
+    <div class="name" id="cardName">—</div>
+    <div class="discount-row">
+      <span class="discount-pct" id="cardDiscount">—</span>
+      <span class="discount-label">
+        discount<strong>la toți partenerii noștri<span class="nivel-tag" id="cardNivel">—</span></strong>
+      </span>
+    </div>
+    <div class="cod" id="cardCod">—</div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Tranzacții totale</div><div class="val" id="kTxCount">—</div></div>
+    <div class="kpi"><div class="lbl">Total cheltuit</div><div class="val" id="kTotalPlatit">—</div></div>
+    <div class="kpi"><div class="lbl">Total economisit</div><div class="val green" id="kTotalEconomie">—</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="istoric">Istoric plăți</button>
+    <button class="tab" data-tab="oferte">Oferte</button>
+    <button class="tab" data-tab="profil">Profil</button>
+  </div>
+
+  <!-- ISTORIC -->
+  <section class="tab-panel active" id="panel-istoric">
+    <div id="loadingIstoric" class="loading">Se încarcă istoricul...</div>
+    <div class="table-wrap" id="istoricWrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Partener</th>
+            <th>Servicii</th>
+            <th style="text-align:right">Sumă listă</th>
+            <th style="text-align:right">Discount</th>
+            <th style="text-align:right">Plătit</th>
+          </tr>
+        </thead>
+        <tbody id="istoricTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- OFERTE -->
+  <section class="tab-panel" id="panel-oferte">
+    <div id="loadingOferte" class="loading">Se încarcă ofertele...</div>
+    <div id="oferteContainer"></div>
+  </section>
+
+  <!-- PROFIL -->
+  <section class="tab-panel" id="panel-profil">
+    <div class="profile-grid">
+      <div class="profile-item">
+        <div class="lbl">Nume complet</div>
+        <div class="val" id="pNume">—</div>
+      </div>
+      <div class="profile-item">
+        <div class="lbl">Email</div>
+        <div class="val" id="pEmail">—</div>
+      </div>
+      <div class="profile-item">
+        <div class="lbl">Telefon</div>
+        <div class="val" id="pTelefon">—</div>
+      </div>
+      <div class="profile-item">
+        <div class="lbl">Cod card</div>
+        <div class="val cod-mono" id="pCod">—</div>
+      </div>
+      <div class="profile-item">
+        <div class="lbl">Card emis</div>
+        <div class="val" id="pData">—</div>
+      </div>
+      <div class="profile-item">
+        <div class="lbl">Nivel discount</div>
+        <div class="val" id="pNivel">—</div>
+      </div>
+    </div>
+    <div class="profile-note">
+      Pentru modificări la profil (telefon, email, etc.), contactează clinica direct.
+      Datele tale sunt protejate conform GDPR.
+    </div>
+  </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared/config.js"></script>
+<script src="shared/supabase-client.js"></script>
+<script>
+var pacientProfile = null;
+var allTx = [];
+
+(async function init() {
+  pacientProfile = await Clinica.requirePacient();
+  if (!pacientProfile) return;
+
+  // Update topbar
+  document.getElementById("userEmail").textContent = pacientProfile.email || "—";
+
+  // Update card hero
+  document.getElementById("cardName").textContent =
+    (pacientProfile.prenume || "") + " " + (pacientProfile.nume || "");
+  document.getElementById("cardDiscount").textContent = pacientProfile.discount_pct + "%";
+  document.getElementById("cardCod").textContent = pacientProfile.cod_card;
+
+  var nivel = pacientProfile.niveluri_discount;
+  if (nivel && nivel.denumire) {
+    document.getElementById("cardNivel").textContent = nivel.denumire;
+  } else {
+    document.getElementById("cardNivel").style.display = "none";
+  }
+
+  // Update profil tab
+  document.getElementById("pNume").textContent =
+    (pacientProfile.prenume || "") + " " + (pacientProfile.nume || "");
+  document.getElementById("pEmail").textContent = pacientProfile.email || "—";
+  document.getElementById("pTelefon").textContent = pacientProfile.telefon || "—";
+  document.getElementById("pCod").textContent = pacientProfile.cod_card;
+  document.getElementById("pData").textContent = pacientProfile.data_emitere_card || "—";
+  document.getElementById("pNivel").textContent =
+    nivel ? (nivel.denumire + " (" + pacientProfile.discount_pct + "%)") : pacientProfile.discount_pct + "%";
+
+  if (!pacientProfile.telefon) document.getElementById("pTelefon").classList.add("empty");
+
+  // Logout
+  document.getElementById("logoutBtn").addEventListener("click", async function() {
+    await Clinica.signOut();
+    window.location.href = "index.html";
+  });
+
+  await loadIstoric();
+})();
+
+async function loadIstoric() {
+  document.getElementById("loadingIstoric").style.display = "flex";
+  document.getElementById("istoricWrap").style.display = "none";
+
+  var { data, error } = await Clinica.listTranzactiiPacient();
+  document.getElementById("loadingIstoric").style.display = "none";
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  allTx = data || [];
+
+  // KPIs
+  var totalPlatit = 0, totalEcon = 0;
+  allTx.forEach(function(t) {
+    if (t.status === "anulat") return;
+    totalPlatit += parseFloat(t.pret_platit) || 0;
+    totalEcon += parseFloat(t.economie) || 0;
+  });
+  document.getElementById("kTxCount").textContent = allTx.length;
+  document.getElementById("kTotalPlatit").textContent = Clinica.formatRON(totalPlatit);
+  document.getElementById("kTotalEconomie").textContent = Clinica.formatRON(totalEcon);
+
+  // Tabel
+  var tbody = document.getElementById("istoricTbody");
+  document.getElementById("istoricWrap").style.display = "block";
+
+  if (!allTx.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty"><h3>Fără tranzacții încă</h3>Discount-ul tău se aplică automat la toți partenerii. La prima ta vizită, tranzacția va apărea aici.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allTx.map(function(t) {
+    var pa = t.parteneri || {};
+    return '<tr>' +
+      '<td>' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
+      '<td><strong>' + Clinica.escapeHtml(pa.denumire || "—") + '</strong>' +
+        (pa.oras ? '<br><span style="font-size:11px;color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(pa.oras) + '</span>' : '') +
+      '</td>' +
+      '<td style="font-size:12px">' + Clinica.escapeHtml(t.servicii || "—") + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:rgba(15,17,23,0.6)">' + Clinica.formatRON(t.pret_lista) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:var(--green);font-weight:700">−' + Clinica.formatRON(t.economie) + '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
+    '</tr>';
+  }).join("");
+}
+
+async function loadOferte() {
+  document.getElementById("loadingOferte").style.display = "flex";
+  var container = document.getElementById("oferteContainer");
+  container.innerHTML = "";
+
+  var { data, error } = await Clinica.listOferteActive();
+  document.getElementById("loadingOferte").style.display = "none";
+
+  if (error) {
+    console.error(error);
+    container.innerHTML = '<div class="empty"><h3>Eroare</h3>Nu s-au putut încărca ofertele.</div>';
+    return;
+  }
+
+  if (!data || !data.length) {
+    container.innerHTML = '<div class="empty"><h3>Fără oferte active</h3>Verifică din când în când pentru oferte noi.</div>';
+    return;
+  }
+
+  var html = '<div class="oferte-grid">';
+  data.forEach(function(o) {
+    html += '<div class="oferta">' +
+      '<h3>' + Clinica.escapeHtml(o.titlu) + '</h3>' +
+      (o.descriere ? '<p>' + Clinica.escapeHtml(o.descriere) + '</p>' : '') +
+      (o.data_sfarsit ? '<div class="meta">Valabil până la ' + Clinica.escapeHtml(o.data_sfarsit) + '</div>' : '') +
+      (o.link_extern ? '<a href="' + Clinica.escapeHtml(o.link_extern) + '" target="_blank" rel="noopener" class="link">Detalii →</a>' : '') +
+    '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Tabs
+var oferteLoaded = false;
+document.querySelectorAll(".tab").forEach(function(t) {
+  t.addEventListener("click", function() {
+    document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
+    document.querySelectorAll(".tab-panel").forEach(function(x) { x.classList.remove("active"); });
+    t.classList.add("active");
+    document.getElementById("panel-" + t.dataset.tab).classList.add("active");
+
+    if (t.dataset.tab === "oferte" && !oferteLoaded) {
+      oferteLoaded = true;
+      loadOferte();
+    }
+  });
+});
+</script>
+</body>
+</html>
