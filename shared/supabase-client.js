@@ -180,10 +180,11 @@ window.Clinica = {
     return { data, error };
   },
   async listPacienti() {
+    // Admin vede TOȚI pacienții, activi și dezactivați
     var { data, error } = await sb
       .from("pacienti")
       .select("*")
-      .eq("activ", true)
+      .order("activ", { ascending: false })  // activii primii
       .order("created_at", { ascending: false });
     return { data, error };
   },
@@ -192,6 +193,9 @@ window.Clinica = {
   },
   async updatePacient(id, payload) {
     return await sb.from("pacienti").update(payload).eq("id", id).select().single();
+  },
+  async togglePacientActiv(id, activ) {
+    return await sb.from("pacienti").update({ activ: activ }).eq("id", id).select().single();
   },
   async generateCodCard() {
     var { data } = await sb.rpc("genereaza_cod_card");
