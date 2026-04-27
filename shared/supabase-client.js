@@ -123,6 +123,32 @@ window.Clinica = {
     return data;
   },
 
+  // ─── Niveluri discount ───
+  async listNiveluri() {
+    var { data, error } = await sb
+      .from("niveluri_discount")
+      .select("*")
+      .order("ordine", { ascending: true });
+    return { data, error };
+  },
+  async listNiveluriActive() {
+    var { data, error } = await sb
+      .from("niveluri_discount")
+      .select("*")
+      .eq("activ", true)
+      .order("ordine", { ascending: true });
+    return { data, error };
+  },
+  async createNivel(payload) {
+    return await sb.from("niveluri_discount").insert(payload).select().single();
+  },
+  async updateNivel(id, payload) {
+    return await sb.from("niveluri_discount").update(payload).eq("id", id).select().single();
+  },
+  async deleteNivel(id) {
+    return await sb.from("niveluri_discount").delete().eq("id", id);
+  },
+
   // ─── Parteneri ───
   async listParteneri() {
     var { data, error } = await sb
