@@ -68,11 +68,11 @@ h1 em { font-style: italic; color: var(--accent); }
 
 .options {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
   margin-bottom: 32px;
 }
-@media (max-width: 600px) {
+@media (max-width: 800px) {
   .options { grid-template-columns: 1fr; }
 }
 
@@ -99,6 +99,7 @@ h1 em { font-style: italic; color: var(--accent); }
 }
 .option-admin::before { background: var(--accent); }
 .option-partener::before { background: var(--gold); }
+.option-pacient::before { background: var(--green); }
 
 .option:hover {
   border-color: var(--ink);
@@ -118,6 +119,7 @@ h1 em { font-style: italic; color: var(--accent); }
 }
 .option-admin .label { color: var(--accent); }
 .option-partener .label { color: var(--gold); }
+.option-pacient .label { color: var(--green); }
 
 .option h3 {
   font-family: 'DM Serif Display', serif;
@@ -129,6 +131,7 @@ h1 em { font-style: italic; color: var(--accent); }
 .option h3 em { font-style: italic; }
 .option-admin h3 em { color: var(--accent); }
 .option-partener h3 em { color: var(--gold); }
+.option-pacient h3 em { color: var(--green); }
 
 .option p {
   font-size: 13px;
@@ -146,6 +149,7 @@ h1 em { font-style: italic; color: var(--accent); }
 }
 .option-admin .arrow { color: var(--accent); }
 .option-partener .arrow { color: var(--gold); }
+.option-pacient .arrow { color: var(--green); }
 
 .foot {
   text-align: center;
@@ -180,6 +184,13 @@ h1 em { font-style: italic; color: var(--accent); }
       <p>Acces pentru clinici/laboratoare partenere: scanare QR pacienți și înregistrare tranzacții.</p>
       <span class="arrow">Continuă →</span>
     </a>
+
+    <a href="login.html?type=pacient" class="option option-pacient">
+      <span class="label">Pacient</span>
+      <h3>Login <em>pacient</em></h3>
+      <p>Acces la cardul tău: vezi discount-ul, istoricul tranzacțiilor și ofertele active.</p>
+      <span class="arrow">Continuă →</span>
+    </a>
   </nav>
 
   <p class="foot">
@@ -199,6 +210,8 @@ h1 em { font-style: italic; color: var(--accent); }
     window.location.href = "dashboard.html";
   } else if (type === "partener") {
     window.location.href = "partener.html";
+  } else if (type === "pacient") {
+    window.location.href = "pacient.html";
   }
 })();
 </script>
