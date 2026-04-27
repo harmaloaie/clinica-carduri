@@ -319,6 +319,78 @@ tbody tr:hover { background: var(--cream); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ─── Tabs ─── */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 28px;
+}
+.tabs .tab {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.5);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+}
+.tabs .tab:hover { color: var(--ink); }
+.tabs .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── Niveluri specific ─── */
+.nivel-color-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 8px;
+  border: 1px solid rgba(15,17,23,0.15);
+}
+.nivel-pct-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 99px;
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+.nivel-status-active {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(26, 107, 60, 0.15);
+  color: var(--green);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.nivel-status-inactive {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(15, 17, 23, 0.08);
+  color: rgba(15, 17, 23, 0.5);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
 @media (max-width: 600px) {
   .topbar { padding: 12px 16px; }
   .wrap { padding: 24px 16px; }
@@ -343,39 +415,89 @@ tbody tr:hover { background: var(--cream); }
 
 <main class="wrap">
 
-  <div class="section-head">
-    <h1>Pacienți & <em>carduri</em></h1>
-    <div class="actions">
-      <button class="btn-sm" id="reloadBtn">↻ Reîncarcă</button>
-      <button class="btn-sm primary" id="addBtn">+ Adaugă pacient</button>
+  <!-- Tab navigation -->
+  <div class="tabs">
+    <button class="tab active" data-tab="pacienti">Pacienți</button>
+    <button class="tab" data-tab="niveluri">Niveluri discount</button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- TAB: PACIENȚI                                                -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="tab-panel active" id="panel-pacienti">
+
+    <div class="section-head">
+      <h1>Pacienți & <em>carduri</em></h1>
+      <div class="actions">
+        <button class="btn-sm" id="reloadBtn">↻ Reîncarcă</button>
+        <button class="btn-sm primary" id="addBtn">+ Adaugă pacient</button>
+      </div>
     </div>
-  </div>
 
-  <div class="search">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-    <input type="text" id="searchInput" placeholder="Caută după nume, telefon sau cod card...">
-  </div>
+    <div class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.5">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Caută după nume, telefon sau cod card...">
+    </div>
 
-  <div id="loading" class="loading">Se încarcă pacienții...</div>
+    <div id="loading" class="loading">Se încarcă pacienții...</div>
 
-  <div class="table-wrap" id="tableWrap" style="display:none">
-    <table>
-      <thead>
-        <tr>
-          <th>Pacient</th>
-          <th>Cod card</th>
-          <th>Discount</th>
-          <th>Telefon</th>
-          <th>CNP</th>
-          <th>Card emis</th>
-          <th style="text-align:right">Acțiuni</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
+    <div class="table-wrap" id="tableWrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>Pacient</th>
+            <th>Cod card</th>
+            <th>Nivel discount</th>
+            <th>Telefon</th>
+            <th>CNP</th>
+            <th>Card emis</th>
+            <th style="text-align:right">Acțiuni</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- TAB: NIVELURI DISCOUNT                                       -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="tab-panel" id="panel-niveluri">
+
+    <div class="section-head">
+      <h1>Niveluri <em>discount</em></h1>
+      <div class="actions">
+        <button class="btn-sm" id="reloadNivBtn">↻ Reîncarcă</button>
+        <button class="btn-sm primary" id="addNivBtn">+ Adaugă nivel</button>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:rgba(15,17,23,0.6);margin-bottom:20px;line-height:1.5">
+      Definește nivelurile de discount. Acestea apar în dropdown-ul de la creare pacient.
+      Un pacient cu un nivel șters își păstrează procentul (snapshot la momentul atribuirii).
+    </p>
+
+    <div id="loadingNiv" class="loading">Se încarcă nivelurile...</div>
+
+    <div class="table-wrap" id="nivWrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>Ordine</th>
+            <th>Denumire</th>
+            <th style="text-align:right">Discount</th>
+            <th>Culoare</th>
+            <th style="text-align:right">Pacienți</th>
+            <th>Status</th>
+            <th style="text-align:right">Acțiuni</th>
+          </tr>
+        </thead>
+        <tbody id="nivTbody"></tbody>
+      </table>
+    </div>
+  </section>
 
 </main>
 
@@ -418,13 +540,13 @@ tbody tr:hover { background: var(--cream); }
           <input type="text" id="pCNP" maxlength="13" pattern="[0-9]{13}" placeholder="13 cifre">
         </div>
         <div class="field">
-          <label>Discount % *</label>
+          <label>Nivel discount *</label>
           <select id="pDiscount" required>
-            <option value="2.5">2.5% — Bronze</option>
-            <option value="5">5% — Silver</option>
-            <option value="7.5" selected>7.5% — Gold</option>
-            <option value="10">10% — Platinum</option>
+            <option value="">— Selectează nivel —</option>
           </select>
+          <small style="display:block;margin-top:6px;color:rgba(15,17,23,0.5);font-size:11px">
+            Definește niveluri în tab-ul "Niveluri discount"
+          </small>
         </div>
       </div>
 
@@ -491,17 +613,68 @@ tbody tr:hover { background: var(--cream); }
   </div>
 </div>
 
+<!-- Modal: Add/Edit Nivel -->
+<div class="modal-bg" id="nivModalBg">
+  <div class="modal">
+    <h2 id="nivModalTitle">Nivel <em>nou</em></h2>
+    <p class="help">Completează detaliile nivelului. Pacienții îl vor vedea în dropdown la creare.</p>
+
+    <div class="banner-error" id="nivModalError"></div>
+
+    <form id="nivelForm" autocomplete="off">
+      <input type="hidden" id="nId">
+
+      <div class="row2">
+        <div class="field">
+          <label>Denumire *</label>
+          <input type="text" id="nDenumire" required maxlength="50" placeholder="ex. Bronze, VIP, Aniversar">
+        </div>
+        <div class="field">
+          <label>Discount % *</label>
+          <input type="number" id="nDiscount" required min="0" max="100" step="0.1" placeholder="ex. 7.5">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Culoare badge</label>
+          <input type="color" id="nCuloare" value="#b8973a" style="height:42px;padding:4px;cursor:pointer">
+        </div>
+        <div class="field">
+          <label>Ordine în dropdown</label>
+          <input type="number" id="nOrdine" min="0" value="0" placeholder="0, 1, 2...">
+        </div>
+      </div>
+
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:14px;font-family:inherit">
+          <input type="checkbox" id="nActiv" checked style="width:18px;height:18px;cursor:pointer">
+          Activ (apare în dropdown la creare pacient)
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="nivModalCancel">Anulează</button>
+        <button type="submit" class="btn btn-primary" id="nivModalSave">Salvează</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared/config.js"></script>
 <script src="shared/supabase-client.js"></script>
 <script>
 var allPacienti = [];
+var allNiveluri = [];
 var currentEditId = null;
+var currentEditNivelId = null;
 
 (async function init() {
   var profile = await Clinica.requireAdmin();
   if (!profile) return;
   document.getElementById("userEmail").textContent = profile.email;
+  await loadNiveluri();    // încarcă întâi nivelurile (necesare pentru dropdown)
   await loadPacienti();
 })();
 
@@ -530,12 +703,20 @@ function renderPacienti(list) {
   }
 
   tbody.innerHTML = list.map(function(p) {
+    // Caută nivelul pacientului (dacă e legat)
+    var nivel = p.nivel_id ? allNiveluri.find(function(n) { return n.id === p.nivel_id; }) : null;
+    var nivelDenumire = nivel ? nivel.denumire : "—";
+    var nivelCuloare = nivel ? nivel.culoare : '#b8973a';
+
     return '<tr>' +
       '<td><strong>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '</strong>' +
         (p.email ? '<br><span style="font-size:11px;color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(p.email) + '</span>' : '') +
       '</td>' +
       '<td class="cod">' + Clinica.escapeHtml(p.cod_card) + '</td>' +
-      '<td><span class="discount-badge">' + p.discount_pct + '%</span></td>' +
+      '<td>' +
+        '<span class="nivel-pct-tag" style="background:' + Clinica.escapeHtml(nivelCuloare) + '">' + p.discount_pct + '%</span>' +
+        '<span style="margin-left:8px;font-size:12px;color:rgba(15,17,23,0.6)">' + Clinica.escapeHtml(nivelDenumire) + '</span>' +
+      '</td>' +
       '<td>' + Clinica.escapeHtml(p.telefon || "—") + '</td>' +
       '<td class="cod" style="font-size:11px">' + Clinica.escapeHtml(p.cnp || "—") + '</td>' +
       '<td>' + Clinica.escapeHtml(p.data_emitere_card || "—") + '</td>' +
@@ -577,12 +758,31 @@ document.getElementById("searchInput").addEventListener("input", function(e) {
   renderPacienti(filtered);
 });
 
+// Helper: populeaza dropdown-ul de niveluri în formul pacient
+function populateDiscountDropdown(selectedNivelId) {
+  var sel = document.getElementById("pDiscount");
+  // Păstrează prima opțiune (placeholder), șterge restul
+  sel.innerHTML = '<option value="">— Selectează nivel —</option>';
+  // Adaugă doar nivelurile active
+  allNiveluri.filter(function(n) { return n.activ; }).forEach(function(n) {
+    var opt = document.createElement("option");
+    opt.value = n.id;
+    opt.dataset.discount = n.discount_pct;
+    opt.textContent = n.denumire + " — " + n.discount_pct + "%";
+    if (selectedNivelId && n.id === selectedNivelId) {
+      opt.selected = true;
+    }
+    sel.appendChild(opt);
+  });
+}
+
 // Add modal
 document.getElementById("addBtn").addEventListener("click", function() {
   currentEditId = null;
   document.getElementById("modalTitle").innerHTML = 'Pacient <em>nou</em>';
   document.getElementById("pacientForm").reset();
   document.getElementById("pId").value = "";
+  populateDiscountDropdown(null);
   document.getElementById("modalBg").classList.add("show");
 });
 
@@ -595,7 +795,7 @@ function openEditModal(p) {
   document.getElementById("pTelefon").value = p.telefon || "";
   document.getElementById("pEmail").value = p.email || "";
   document.getElementById("pCNP").value = p.cnp || "";
-  document.getElementById("pDiscount").value = p.discount_pct;
+  populateDiscountDropdown(p.nivel_id);
   document.getElementById("pCodCard").value = p.cod_card || "";
   document.getElementById("modalBg").classList.add("show");
 }
@@ -615,6 +815,25 @@ document.getElementById("pacientForm").addEventListener("submit", async function
     codCard = await Clinica.generateCodCard();
   }
 
+  // Iau nivelul selectat (id) și citesc procentul aferent
+  var sel = document.getElementById("pDiscount");
+  var nivelId = sel.value;
+  if (!nivelId) {
+    var err = document.getElementById("modalError");
+    err.textContent = "Selectează un nivel de discount.";
+    err.classList.add("show");
+    btn.disabled = false; btn.textContent = "Salvează";
+    return;
+  }
+  var nivel = allNiveluri.find(function(n) { return n.id === nivelId; });
+  if (!nivel) {
+    var err = document.getElementById("modalError");
+    err.textContent = "Nivel invalid. Reîncarcă pagina.";
+    err.classList.add("show");
+    btn.disabled = false; btn.textContent = "Salvează";
+    return;
+  }
+
   var payload = {
     cod_card: codCard,
     prenume: document.getElementById("pPrenume").value.trim(),
@@ -622,7 +841,8 @@ document.getElementById("pacientForm").addEventListener("submit", async function
     telefon: document.getElementById("pTelefon").value.trim() || null,
     email: document.getElementById("pEmail").value.trim() || null,
     cnp: document.getElementById("pCNP").value.trim() || null,
-    discount_pct: parseFloat(document.getElementById("pDiscount").value)
+    nivel_id: nivelId,
+    discount_pct: parseFloat(nivel.discount_pct)  // snapshot al procentului
   };
 
   var result;
@@ -733,6 +953,184 @@ document.getElementById("modalBg").addEventListener("click", function(e) {
 });
 document.getElementById("qrModalBg").addEventListener("click", function(e) {
   if (e.target === this) this.classList.remove("show");
+});
+document.getElementById("nivModalBg").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════
+document.querySelectorAll(".tab").forEach(function(t) {
+  t.addEventListener("click", function() {
+    document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
+    document.querySelectorAll(".tab-panel").forEach(function(x) { x.classList.remove("active"); });
+    t.classList.add("active");
+    document.getElementById("panel-" + t.dataset.tab).classList.add("active");
+
+    // La schimbare la tab niveluri, reîncarcă datele
+    if (t.dataset.tab === "niveluri") {
+      renderNiveluri();
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// NIVELURI DISCOUNT
+// ═══════════════════════════════════════════════════════════════
+
+async function loadNiveluri() {
+  var { data, error } = await Clinica.listNiveluri();
+  if (error) {
+    console.error(error);
+    return;
+  }
+  allNiveluri = data || [];
+}
+
+function renderNiveluri() {
+  document.getElementById("loadingNiv").style.display = "none";
+  document.getElementById("nivWrap").style.display = "block";
+
+  var tbody = document.getElementById("nivTbody");
+  if (!allNiveluri.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty"><h3>Niciun nivel</h3>Apasă „+ Adaugă nivel" pentru a începe.</td></tr>';
+    return;
+  }
+
+  // Numără pacienți per nivel
+  var conteoPacienti = {};
+  allPacienti.forEach(function(p) {
+    if (p.nivel_id) {
+      conteoPacienti[p.nivel_id] = (conteoPacienti[p.nivel_id] || 0) + 1;
+    }
+  });
+
+  tbody.innerHTML = allNiveluri.map(function(n) {
+    var nrPac = conteoPacienti[n.id] || 0;
+    return '<tr>' +
+      '<td style="font-family:\'JetBrains Mono\',monospace;color:rgba(15,17,23,0.5)">' + (n.ordine || 0) + '</td>' +
+      '<td><strong>' + Clinica.escapeHtml(n.denumire) + '</strong></td>' +
+      '<td style="text-align:right">' +
+        '<span class="nivel-pct-tag" style="background:' + Clinica.escapeHtml(n.culoare || '#b8973a') + '">' + n.discount_pct + '%</span>' +
+      '</td>' +
+      '<td>' +
+        '<span class="nivel-color-dot" style="background:' + Clinica.escapeHtml(n.culoare || '#b8973a') + '"></span>' +
+        '<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:rgba(15,17,23,0.6)">' + Clinica.escapeHtml(n.culoare || '—') + '</span>' +
+      '</td>' +
+      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace">' + nrPac + '</td>' +
+      '<td>' + (n.activ
+          ? '<span class="nivel-status-active">Activ</span>'
+          : '<span class="nivel-status-inactive">Inactiv</span>') +
+      '</td>' +
+      '<td><div class="row-actions">' +
+        '<button data-niv-act="edit" data-id="' + n.id + '">Edit</button>' +
+        (nrPac === 0 ? '<button data-niv-act="delete" data-id="' + n.id + '" style="color:var(--accent);border-color:var(--accent)">Șterge</button>' : '') +
+      '</div></td>' +
+    '</tr>';
+  }).join("");
+
+  // Bind row actions
+  tbody.querySelectorAll("button[data-niv-act]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var id = btn.dataset.id;
+      var n = allNiveluri.find(function(x) { return x.id === id; });
+      if (!n) return;
+      if (btn.dataset.nivAct === "edit") openEditNivelModal(n);
+      else if (btn.dataset.nivAct === "delete") deleteNivelConfirm(n);
+    });
+  });
+}
+
+// Add nivel modal
+document.getElementById("addNivBtn").addEventListener("click", function() {
+  currentEditNivelId = null;
+  document.getElementById("nivModalTitle").innerHTML = 'Nivel <em>nou</em>';
+  document.getElementById("nivelForm").reset();
+  document.getElementById("nId").value = "";
+  document.getElementById("nCuloare").value = "#b8973a";
+  document.getElementById("nOrdine").value = allNiveluri.length;
+  document.getElementById("nActiv").checked = true;
+  document.getElementById("nivModalError").classList.remove("show");
+  document.getElementById("nivModalBg").classList.add("show");
+});
+
+function openEditNivelModal(n) {
+  currentEditNivelId = n.id;
+  document.getElementById("nivModalTitle").innerHTML = 'Editare <em>nivel</em>';
+  document.getElementById("nId").value = n.id;
+  document.getElementById("nDenumire").value = n.denumire || "";
+  document.getElementById("nDiscount").value = n.discount_pct;
+  document.getElementById("nCuloare").value = n.culoare || "#b8973a";
+  document.getElementById("nOrdine").value = n.ordine || 0;
+  document.getElementById("nActiv").checked = !!n.activ;
+  document.getElementById("nivModalError").classList.remove("show");
+  document.getElementById("nivModalBg").classList.add("show");
+}
+
+document.getElementById("nivModalCancel").addEventListener("click", function() {
+  document.getElementById("nivModalBg").classList.remove("show");
+});
+
+document.getElementById("nivelForm").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+
+  var btn = document.getElementById("nivModalSave");
+  btn.disabled = true; btn.textContent = "Se salvează...";
+
+  var payload = {
+    denumire: document.getElementById("nDenumire").value.trim(),
+    discount_pct: parseFloat(document.getElementById("nDiscount").value),
+    culoare: document.getElementById("nCuloare").value,
+    ordine: parseInt(document.getElementById("nOrdine").value) || 0,
+    activ: document.getElementById("nActiv").checked
+  };
+
+  if (!payload.denumire) {
+    var err = document.getElementById("nivModalError");
+    err.textContent = "Denumire obligatorie.";
+    err.classList.add("show");
+    btn.disabled = false; btn.textContent = "Salvează";
+    return;
+  }
+
+  var result;
+  if (currentEditNivelId) {
+    result = await Clinica.updateNivel(currentEditNivelId, payload);
+  } else {
+    result = await Clinica.createNivel(payload);
+  }
+
+  btn.disabled = false; btn.textContent = "Salvează";
+
+  if (result.error) {
+    var err = document.getElementById("nivModalError");
+    err.textContent = "Eroare: " + (result.error.message || "necunoscută");
+    err.classList.add("show");
+    return;
+  }
+
+  document.getElementById("nivModalBg").classList.remove("show");
+  await loadNiveluri();
+  renderNiveluri();
+});
+
+async function deleteNivelConfirm(n) {
+  if (!confirm("Sigur vrei să ștergi nivelul \"" + n.denumire + "\"?\n\nPacienții care îl folosesc își vor păstra procentul (snapshot).")) {
+    return;
+  }
+  var { error } = await Clinica.deleteNivel(n.id);
+  if (error) {
+    alert("Eroare la ștergere: " + (error.message || "necunoscută"));
+    return;
+  }
+  await loadNiveluri();
+  renderNiveluri();
+}
+
+document.getElementById("reloadNivBtn").addEventListener("click", async function() {
+  await loadNiveluri();
+  renderNiveluri();
 });
 </script>
 </body>
