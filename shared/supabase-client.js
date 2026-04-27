@@ -29,6 +29,16 @@ window.Clinica = {
   async signIn(email, password) {
     return await sb.auth.signInWithPassword({ email, password });
   },
+  // Magic link pentru pacienți — trimite link pe email
+  async sendMagicLink(email, redirectTo) {
+    return await sb.auth.signInWithOtp({
+      email: email,
+      options: {
+        emailRedirectTo: redirectTo || window.location.origin + window.location.pathname.replace(/[^/]+$/, "pacient.html"),
+        shouldCreateUser: true  // creează userul dacă nu există încă
+      }
+    });
+  },
   async signOut() {
     return await sb.auth.signOut();
   },
@@ -50,7 +60,19 @@ window.Clinica = {
       .maybeSingle();
     return data;
   },
-  // Returnează tipul userului ('admin', 'partener', null)
+  // Profil pacient — caută prin email
+  async getPacientProfile() {
+    var user = await this.getCurrentUser();
+    if (!user || !user.email) return null;
+    var { data } = await sb
+      .from("pacienti")
+      .select("*, niveluri_discount(denumire, culoare)")
+      .ilike("email", user.email)  // case-insensitive
+      .eq("activ", true)
+      .maybeSingle();
+    return data;
+  },
+  // Returnează tipul userului ('admin', 'partener', 'pacient', null)
   async getUserType() {
     var user = await this.getCurrentUser();
     if (!user) return null;
@@ -58,6 +80,8 @@ window.Clinica = {
     if (admin && admin.activ) return "admin";
     var partener = await this.getPartenerProfile();
     if (partener && partener.activ) return "partener";
+    var pacient = await this.getPacientProfile();
+    if (pacient) return "pacient";
     return null;
   },
 
@@ -93,6 +117,57 @@ window.Clinica = {
       return null;
     }
     return profile;
+  },
+
+  async requirePacient() {
+    var user = await this.getCurrentUser();
+    if (!user) {
+      window.location.href = "login.html?type=pacient";
+      return null;
+    }
+    var profile = await this.getPacientProfile();
+    if (!profile) {
+      alert("Nu există un cont de pacient asociat acestui email. Cere admin-ului să verifice email-ul tău în profil.");
+      await this.signOut();
+      window.location.href = "login.html?type=pacient";
+      return null;
+    }
+    return profile;
+  },
+
+  // ─── Oferte ───
+  async listOferteActive() {
+    var { data, error } = await sb
+      .from("oferte")
+      .select("*")
+      .eq("activ", true)
+      .order("created_at", { ascending: false });
+    return { data, error };
+  },
+  async listOferteAdmin() {
+    var { data, error } = await sb
+      .from("oferte")
+      .select("*")
+      .order("created_at", { ascending: false });
+    return { data, error };
+  },
+  async createOferta(payload) {
+    return await sb.from("oferte").insert(payload).select().single();
+  },
+  async updateOferta(id, payload) {
+    return await sb.from("oferte").update(payload).eq("id", id).select().single();
+  },
+  async deleteOferta(id) {
+    return await sb.from("oferte").delete().eq("id", id);
+  },
+
+  // ─── Tranzacții pacient ───
+  async listTranzactiiPacient() {
+    var { data, error } = await sb
+      .from("tranzactii")
+      .select("*, parteneri(cod, denumire, oras)")
+      .order("created_at", { ascending: false });
+    return { data, error };
   },
 
   // ─── Pacienți ───
