@@ -41,6 +41,7 @@ body {
 }
 .box.admin::before { background: var(--accent); }
 .box.partener::before { background: var(--gold); }
+.box.pacient::before { background: var(--green); }
 
 .head {
   text-align: center;
@@ -64,6 +65,7 @@ body {
 .head h1 em { font-style: italic; }
 .box.admin h1 em { color: var(--accent); }
 .box.partener h1 em { color: var(--gold); }
+.box.pacient h1 em { color: var(--green); }
 
 .head .sub {
   font-size: 13px;
@@ -124,6 +126,36 @@ body {
 }
 .banner-error.show { display: block; }
 
+.banner-success {
+  background: rgba(26, 107, 60, 0.1);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  display: none;
+}
+.banner-success.show { display: block; }
+.banner-success strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.info-magic {
+  background: rgba(26, 107, 60, 0.06);
+  border: 1px solid rgba(26, 107, 60, 0.2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: rgba(15,17,23,0.7);
+  line-height: 1.5;
+}
+.info-magic strong { color: var(--green); }
+
 .foot {
   text-align: center;
   margin-top: 20px;
@@ -135,17 +167,19 @@ body {
 .foot a { color: rgba(15, 17, 23, 0.6); text-decoration: none; }
 .foot a:hover { color: var(--accent); }
 
-.switch-link {
-  display: block;
+.switch-links {
   text-align: center;
   margin-top: 8px;
   font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.switch-link a {
+.switch-links a {
   color: rgba(15,17,23,0.5);
   text-decoration: none;
 }
-.switch-link a:hover { color: var(--ink); }
+.switch-links a:hover { color: var(--ink); }
 </style>
 </head>
 <body>
@@ -158,8 +192,10 @@ body {
   </header>
 
   <div class="banner-error" id="errorBox"></div>
+  <div class="banner-success" id="successBox"></div>
 
-  <form id="loginForm" autocomplete="on">
+  <!-- Form pentru admin / partener (cu parolă) -->
+  <form id="passwordForm" autocomplete="on" style="display:none">
     <div class="field">
       <label>Email</label>
       <input type="email" id="email" required autocomplete="email" autofocus>
@@ -171,9 +207,21 @@ body {
     <button type="submit" class="btn" id="submitBtn">Intră în cont →</button>
   </form>
 
-  <div class="switch-link">
-    <a href="#" id="switchLink">—</a>
-  </div>
+  <!-- Form pentru pacient (magic link) -->
+  <form id="magicForm" autocomplete="on" style="display:none">
+    <div class="info-magic" id="magicInfo">
+      <strong>Login fără parolă</strong>
+      Introdu email-ul cu care ești înregistrat. Vei primi un link pe email pentru a te conecta — fără să-ți amintești parola.
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="emailMagic" required autocomplete="email" autofocus>
+    </div>
+    <button type="submit" class="btn" id="submitMagicBtn">Trimite link pe email →</button>
+  </form>
+
+  <div class="switch-links" id="switchLinks"></div>
 
   <div class="foot">
     <a href="index.html">← Pagina principală</a>
@@ -184,33 +232,62 @@ body {
 <script src="shared/config.js"></script>
 <script src="shared/supabase-client.js"></script>
 <script>
-// Determine login type from URL
 var params = new URLSearchParams(window.location.search);
-var loginType = params.get("type") || "admin"; // default admin
-if (loginType !== "admin" && loginType !== "partener") loginType = "admin";
+var loginType = params.get("type") || "admin";
+if (["admin", "partener", "pacient"].indexOf(loginType) < 0) loginType = "admin";
 
 var box = document.getElementById("loginBox");
 box.classList.add(loginType);
 
-// Update UI based on type
-if (loginType === "admin") {
-  document.getElementById("loginTitle").innerHTML = 'Login <em>admin</em>';
-  document.getElementById("loginSub").textContent = "Acces panou administrare";
-  document.getElementById("switchLink").href = "login.html?type=partener";
-  document.getElementById("switchLink").textContent = "Ești partener? Login partener →";
-  document.title = "Login Admin · Clinica Central";
+// Configure UI per type
+var titles = {
+  admin: { title: 'Login <em>admin</em>', sub: 'Acces panou administrare' },
+  partener: { title: 'Login <em>partener</em>', sub: 'Acces pentru clinici partenere' },
+  pacient: { title: 'Login <em>pacient</em>', sub: 'Acces la cardul tău și istoric' }
+};
+document.getElementById("loginTitle").innerHTML = titles[loginType].title;
+document.getElementById("loginSub").textContent = titles[loginType].sub;
+document.title = "Login " + loginType + " · Clinica Central";
+
+// Show appropriate form
+if (loginType === "pacient") {
+  document.getElementById("magicForm").style.display = "block";
 } else {
-  document.getElementById("loginTitle").innerHTML = 'Login <em>partener</em>';
-  document.getElementById("loginSub").textContent = "Acces pentru clinici partenere";
-  document.getElementById("switchLink").href = "login.html?type=admin";
-  document.getElementById("switchLink").textContent = "Ești admin? Login admin →";
-  document.title = "Login Partener · Clinica Central";
+  document.getElementById("passwordForm").style.display = "block";
 }
+
+// Switch links
+var switches = {
+  admin: [
+    { href: "login.html?type=partener", label: "Ești partener?" },
+    { href: "login.html?type=pacient", label: "Ești pacient?" }
+  ],
+  partener: [
+    { href: "login.html?type=admin", label: "Ești admin?" },
+    { href: "login.html?type=pacient", label: "Ești pacient?" }
+  ],
+  pacient: [
+    { href: "login.html?type=admin", label: "Ești admin?" },
+    { href: "login.html?type=partener", label: "Ești partener?" }
+  ]
+};
+var switchHtml = "";
+switches[loginType].forEach(function(s) {
+  switchHtml += '<a href="' + s.href + '">' + s.label + ' →</a>';
+});
+document.getElementById("switchLinks").innerHTML = switchHtml;
 
 function showError(msg) {
   var b = document.getElementById("errorBox");
   b.textContent = msg;
   b.classList.add("show");
+  document.getElementById("successBox").classList.remove("show");
+}
+function showSuccess(html) {
+  var b = document.getElementById("successBox");
+  b.innerHTML = html;
+  b.classList.add("show");
+  document.getElementById("errorBox").classList.remove("show");
 }
 
 // Auto-redirect dacă deja logat
@@ -222,10 +299,14 @@ function showError(msg) {
   } else if (type === "partener") {
     var next = params.get("next");
     window.location.href = next || "partener.html";
+  } else if (type === "pacient") {
+    var next = params.get("next");
+    window.location.href = next || "pacient.html";
   }
 })();
 
-document.getElementById("loginForm").addEventListener("submit", async function(ev) {
+// Password login (admin / partener)
+document.getElementById("passwordForm").addEventListener("submit", async function(ev) {
   ev.preventDefault();
   var btn = document.getElementById("submitBtn");
   btn.disabled = true;
@@ -243,7 +324,6 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     return;
   }
 
-  // Verifică tipul corect
   var actualType = await Clinica.getUserType();
   if (!actualType) {
     showError("Contul tău nu are acces la sistem. Contactează administratorul.");
@@ -253,29 +333,53 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     return;
   }
 
-  // Dacă tipul real diferă de cel selectat, redirecționăm corect cu mesaj
-  if (loginType === "admin" && actualType === "partener") {
-    showError("Acest cont e de tip partener. Folosește login-ul partener.");
-    await Clinica.signOut();
-    btn.disabled = false;
-    btn.textContent = "Intră în cont →";
-    return;
-  }
-  if (loginType === "partener" && actualType === "admin") {
-    showError("Acest cont e de tip admin. Folosește login-ul admin.");
+  if (loginType !== actualType) {
+    showError("Acest cont e de tip " + actualType + ". Folosește login-ul " + actualType + ".");
     await Clinica.signOut();
     btn.disabled = false;
     btn.textContent = "Intră în cont →";
     return;
   }
 
-  // Redirect corect
   var next = params.get("next");
   if (next) {
     window.location.href = next;
   } else {
-    window.location.href = actualType === "admin" ? "dashboard.html" : "partener.html";
+    var dest = { admin: "dashboard.html", partener: "partener.html", pacient: "pacient.html" };
+    window.location.href = dest[actualType];
   }
+});
+
+// Magic link login (pacient)
+document.getElementById("magicForm").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+  var btn = document.getElementById("submitMagicBtn");
+  btn.disabled = true;
+  btn.textContent = "Se trimite...";
+  document.getElementById("errorBox").classList.remove("show");
+
+  var email = document.getElementById("emailMagic").value.trim();
+
+  // Calculează URL-ul de redirect (pacient.html)
+  var redirectUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, "pacient.html");
+
+  var { error } = await Clinica.sendMagicLink(email, redirectUrl);
+  if (error) {
+    showError("Eroare la trimitere: " + (error.message || "necunoscută"));
+    btn.disabled = false;
+    btn.textContent = "Trimite link pe email →";
+    return;
+  }
+
+  // Hide form, show success
+  document.getElementById("magicForm").style.display = "none";
+  document.getElementById("magicInfo")?.remove();
+  showSuccess(
+    '<strong>Verifică-ți email-ul ✓</strong>' +
+    'Ți-am trimis un link de autentificare la <strong>' + email.replace(/[<>&"']/g, "") + '</strong>. ' +
+    'Click pe link-ul din email pentru a te loga. ' +
+    '<br><br>Link-ul expiră în 1 oră. Verifică și folder-ul Spam.'
+  );
 });
 </script>
 </body>
