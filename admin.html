@@ -441,6 +441,14 @@ tbody tr:hover { background: var(--cream); }
       <input type="text" id="searchInput" placeholder="Caută după nume, telefon sau cod card...">
     </div>
 
+    <div style="display:flex;gap:16px;margin-bottom:16px;font-size:13px;align-items:center;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:rgba(15,17,23,0.65)">
+        <input type="checkbox" id="showInactive" style="cursor:pointer">
+        Arată pacienții dezactivați
+      </label>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(15,17,23,0.4)" id="pacientCount">—</span>
+    </div>
+
     <div id="loading" class="loading">Se încarcă pacienții...</div>
 
     <div class="table-wrap" id="tableWrap" style="display:none">
@@ -692,7 +700,33 @@ async function loadPacienti() {
 
   allPacienti = data || [];
   document.getElementById("tableWrap").style.display = "block";
-  renderPacienti(allPacienti);
+  applyFilters();
+}
+
+function applyFilters() {
+  var showInactive = document.getElementById("showInactive").checked;
+  var q = document.getElementById("searchInput").value.toLowerCase().trim();
+
+  var filtered = allPacienti.filter(function(p) {
+    if (!showInactive && !p.activ) return false;
+    if (q) {
+      return (p.nume || "").toLowerCase().indexOf(q) >= 0 ||
+             (p.prenume || "").toLowerCase().indexOf(q) >= 0 ||
+             (p.cod_card || "").toLowerCase().indexOf(q) >= 0 ||
+             (p.telefon || "").indexOf(q) >= 0 ||
+             (p.email || "").toLowerCase().indexOf(q) >= 0;
+    }
+    return true;
+  });
+
+  // Update counter
+  var activi = allPacienti.filter(function(p) { return p.activ; }).length;
+  var inactivi = allPacienti.length - activi;
+  var counter = activi + " activi";
+  if (inactivi > 0) counter += " · " + inactivi + " dezactivați";
+  document.getElementById("pacientCount").textContent = counter;
+
+  renderPacienti(filtered);
 }
 
 function renderPacienti(list) {
@@ -703,13 +737,14 @@ function renderPacienti(list) {
   }
 
   tbody.innerHTML = list.map(function(p) {
-    // Caută nivelul pacientului (dacă e legat)
     var nivel = p.nivel_id ? allNiveluri.find(function(n) { return n.id === p.nivel_id; }) : null;
     var nivelDenumire = nivel ? nivel.denumire : "—";
     var nivelCuloare = nivel ? nivel.culoare : '#b8973a';
+    var rowStyle = p.activ ? '' : 'opacity:0.45';
 
-    return '<tr>' +
+    return '<tr style="' + rowStyle + '">' +
       '<td><strong>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '</strong>' +
+        (!p.activ ? ' <span style="font-size:10px;background:rgba(200,57,43,0.12);color:var(--accent);padding:2px 6px;border-radius:99px;font-family:\'JetBrains Mono\',monospace;letter-spacing:0.05em;text-transform:uppercase;font-weight:700;margin-left:4px">Dezactivat</span>' : '') +
         (p.email ? '<br><span style="font-size:11px;color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(p.email) + '</span>' : '') +
       '</td>' +
       '<td class="cod">' + Clinica.escapeHtml(p.cod_card) + '</td>' +
@@ -721,42 +756,54 @@ function renderPacienti(list) {
       '<td class="cod" style="font-size:11px">' + Clinica.escapeHtml(p.cnp || "—") + '</td>' +
       '<td>' + Clinica.escapeHtml(p.data_emitere_card || "—") + '</td>' +
       '<td><div class="row-actions">' +
-        '<button data-act="qr" data-id="' + p.id + '">QR</button>' +
-        '<button data-act="copy" data-id="' + p.id + '">Copy URL</button>' +
-        '<button data-act="edit" data-id="' + p.id + '">Edit</button>' +
+        (p.activ
+          ? '<button data-act="qr" data-id="' + p.id + '">QR</button>' +
+            '<button data-act="copy" data-id="' + p.id + '">Copy URL</button>' +
+            '<button data-act="edit" data-id="' + p.id + '">Edit</button>' +
+            '<button data-act="deactivate" data-id="' + p.id + '" style="color:var(--accent);border-color:var(--accent)">Dezactivează</button>'
+          : '<button data-act="reactivate" data-id="' + p.id + '" style="color:var(--green);border-color:var(--green)">Reactivează</button>'
+        ) +
       '</div></td>' +
     '</tr>';
   }).join("");
 
   // Bind row actions
   tbody.querySelectorAll("button[data-act]").forEach(function(btn) {
-    btn.addEventListener("click", function() {
+    btn.addEventListener("click", async function() {
       var id = btn.dataset.id;
       var p = allPacienti.find(function(x) { return x.id === id; });
       if (!p) return;
-      if (btn.dataset.act === "qr") showQR(p);
-      else if (btn.dataset.act === "copy") copyURL(p);
-      else if (btn.dataset.act === "edit") openEditModal(p);
+      var act = btn.dataset.act;
+      if (act === "qr") showQR(p);
+      else if (act === "copy") copyURL(p);
+      else if (act === "edit") openEditModal(p);
+      else if (act === "deactivate") await togglePacientActiv(p, false);
+      else if (act === "reactivate") await togglePacientActiv(p, true);
     });
   });
+}
+
+async function togglePacientActiv(p, activ) {
+  var nume = (p.prenume || "") + " " + (p.nume || "");
+  var msg = activ
+    ? "Reactivezi pacientul \"" + nume + "\"?\n\nVa apărea din nou în lista activă și va putea folosi cardul."
+    : "Dezactivezi pacientul \"" + nume + "\"?\n\n• Tranzacțiile lui rămân în baza de date\n• Cardul lui nu va mai funcționa la scanare\n• Pacientul nu se va mai putea loga\n• Poți reactiva oricând.";
+  if (!confirm(msg)) return;
+  var { error } = await Clinica.togglePacientActiv(p.id, activ);
+  if (error) {
+    alert("Eroare: " + (error.message || "necunoscută"));
+    return;
+  }
+  await loadPacienti();
 }
 
 function buildCardURL(codCard) {
   return window.location.origin + window.location.pathname.replace(/admin\.html$/, "card.html") + "?id=" + codCard;
 }
 
-// Search
-document.getElementById("searchInput").addEventListener("input", function(e) {
-  var q = e.target.value.toLowerCase().trim();
-  if (!q) { renderPacienti(allPacienti); return; }
-  var filtered = allPacienti.filter(function(p) {
-    return (p.nume || "").toLowerCase().indexOf(q) >= 0 ||
-           (p.prenume || "").toLowerCase().indexOf(q) >= 0 ||
-           (p.cod_card || "").toLowerCase().indexOf(q) >= 0 ||
-           (p.telefon || "").indexOf(q) >= 0;
-  });
-  renderPacienti(filtered);
-});
+// Search + filter active/inactive
+document.getElementById("searchInput").addEventListener("input", applyFilters);
+document.getElementById("showInactive").addEventListener("change", applyFilters);
 
 // Helper: populeaza dropdown-ul de niveluri în formul pacient
 function populateDiscountDropdown(selectedNivelId) {
@@ -1025,21 +1072,42 @@ function renderNiveluri() {
       '</td>' +
       '<td><div class="row-actions">' +
         '<button data-niv-act="edit" data-id="' + n.id + '">Edit</button>' +
-        (nrPac === 0 ? '<button data-niv-act="delete" data-id="' + n.id + '" style="color:var(--accent);border-color:var(--accent)">Șterge</button>' : '') +
+        (n.activ
+          ? '<button data-niv-act="deactivate" data-id="' + n.id + '" style="color:var(--accent);border-color:var(--accent)">Dezactivează</button>'
+          : '<button data-niv-act="reactivate" data-id="' + n.id + '" style="color:var(--green);border-color:var(--green)">Reactivează</button>'
+        ) +
+        (nrPac === 0 ? '<button data-niv-act="delete" data-id="' + n.id + '" style="color:var(--accent);border-color:var(--accent)" title="Disponibil doar dacă niciun pacient nu îl folosește">Șterge</button>' : '') +
       '</div></td>' +
     '</tr>';
   }).join("");
 
   // Bind row actions
   tbody.querySelectorAll("button[data-niv-act]").forEach(function(btn) {
-    btn.addEventListener("click", function() {
+    btn.addEventListener("click", async function() {
       var id = btn.dataset.id;
       var n = allNiveluri.find(function(x) { return x.id === id; });
       if (!n) return;
-      if (btn.dataset.nivAct === "edit") openEditNivelModal(n);
-      else if (btn.dataset.nivAct === "delete") deleteNivelConfirm(n);
+      var act = btn.dataset.nivAct;
+      if (act === "edit") openEditNivelModal(n);
+      else if (act === "delete") deleteNivelConfirm(n);
+      else if (act === "deactivate") await toggleNivelActiv(n, false);
+      else if (act === "reactivate") await toggleNivelActiv(n, true);
     });
   });
+}
+
+async function toggleNivelActiv(n, activ) {
+  var msg = activ
+    ? "Reactivezi nivelul \"" + n.denumire + "\"?\n\nVa apărea din nou în dropdown la creare pacient."
+    : "Dezactivezi nivelul \"" + n.denumire + "\"?\n\n• Pacienții existenți cu acest nivel își păstrează discount-ul\n• Nivelul nu va mai apărea în dropdown la creare pacient nou\n• Poți reactiva oricând.";
+  if (!confirm(msg)) return;
+  var { error } = await Clinica.updateNivel(n.id, { activ: activ });
+  if (error) {
+    alert("Eroare: " + (error.message || "necunoscută"));
+    return;
+  }
+  await loadNiveluri();
+  renderNiveluri();
 }
 
 // Add nivel modal
