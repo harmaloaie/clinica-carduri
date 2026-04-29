@@ -7,18 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-<!-- Fallback dacă jsdelivr eșuează -->
-<script>
-window.addEventListener('error', function(e) {
-  if (e.target && e.target.src && e.target.src.indexOf('qrcode') >= 0) {
-    console.warn('jsdelivr QR library failed, loading fallback...');
-    var fallback = document.createElement('script');
-    fallback.src = 'https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js';
-    document.head.appendChild(fallback);
-  }
-}, true);
-</script>
+<!-- Librărie QR locală (fără dependență CDN extern) -->
+<script src="shared/qrcode-lib.js"></script>
 <style>
 :root {
   --ink: #0f1117; --paper: #f8f6f1; --cream: #ede9e0;
@@ -1183,49 +1173,71 @@ function showQR(p) {
 
   var canvas = document.getElementById("qrCanvas");
 
-  // Wait for QRCode library to be available (may load async)
-  function tryGenerateQR(attempts) {
-    attempts = attempts || 0;
-    if (typeof QRCode === 'undefined') {
-      if (attempts < 20) {
-        // Retry up to 20 times (10 seconds total)
-        setTimeout(function() { tryGenerateQR(attempts + 1); }, 500);
-        return;
-      }
-      // Library failed to load — show clear error message in canvas area
-      var ctx = canvas.getContext('2d');
-      canvas.width = 240; canvas.height = 240;
-      ctx.fillStyle = '#fff8e6';
-      ctx.fillRect(0, 0, 240, 240);
-      ctx.fillStyle = '#c8392b';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('⚠ Librăria QR nu', 120, 100);
-      ctx.fillText('s-a încărcat', 120, 120);
-      ctx.font = '11px sans-serif';
-      ctx.fillStyle = '#5a4f30';
-      ctx.fillText('Verifică conexiunea sau', 120, 150);
-      ctx.fillText('folosește generator extern', 120, 168);
-      ctx.fillText('cu URL-ul de mai jos', 120, 186);
-      console.error('QRCode library not loaded after 10s. URL:', url);
-      return;
-    }
-
-    // Library available - generate
-    try {
-      QRCode.toCanvas(canvas, url, { width: 240, margin: 2, errorCorrectionLevel: 'M' }, function(err) {
-        if (err) {
-          console.error('QR generation error:', err);
-          alert('Eroare la generare QR: ' + err.message);
-        }
-      });
-    } catch(e) {
-      console.error('QR exception:', e);
-      alert('Eroare la generare QR: ' + e.message);
-    }
+  // Verifică că librăria locală e încărcată
+  if (typeof qrcode === 'undefined') {
+    var ctx = canvas.getContext('2d');
+    canvas.width = 240; canvas.height = 240;
+    ctx.fillStyle = '#fff8e6';
+    ctx.fillRect(0, 0, 240, 240);
+    ctx.fillStyle = '#c8392b';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠ shared/qrcode-lib.js', 120, 100);
+    ctx.fillText('nu e găsit pe server', 120, 120);
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = '#5a4f30';
+    ctx.fillText('Verifică că ai uploadat', 120, 150);
+    ctx.fillText('fișierul în folderul shared/', 120, 168);
+    console.error('qrcode library missing. Upload shared/qrcode-lib.js to GitHub.');
+    return;
   }
 
-  tryGenerateQR();
+  // Generate QR using qrcode-generator API
+  try {
+    // typeNumber=0 means auto-detect, ECC level M = 15% recovery
+    var qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+
+    // Render to canvas manually (qrcode-generator doesn't have toCanvas)
+    var moduleCount = qr.getModuleCount();
+    var size = 240;
+    var margin = 4; // în module
+    var totalModules = moduleCount + (margin * 2);
+    var moduleSize = size / totalModules;
+
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext('2d');
+
+    // Background alb
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+
+    // Module negre
+    ctx.fillStyle = '#000000';
+    for (var row = 0; row < moduleCount; row++) {
+      for (var col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          var x = (col + margin) * moduleSize;
+          var y = (row + margin) * moduleSize;
+          ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(moduleSize), Math.ceil(moduleSize));
+        }
+      }
+    }
+  } catch(e) {
+    console.error('QR exception:', e);
+    var ctx = canvas.getContext('2d');
+    canvas.width = 240; canvas.height = 240;
+    ctx.fillStyle = '#fff8e6';
+    ctx.fillRect(0, 0, 240, 240);
+    ctx.fillStyle = '#c8392b';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠ Eroare generare QR', 120, 110);
+    ctx.font = '11px sans-serif';
+    ctx.fillText(e.message || 'Eroare necunoscută', 120, 140);
+  }
 
   // Copy URL button
   document.getElementById("qrCopyBtn").onclick = function() {
