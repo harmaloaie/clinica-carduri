@@ -324,6 +324,108 @@ tbody tr:last-child td { border-bottom: none; }
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════ MOBILE OPTIMIZATIONS ═══════ */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 10px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .topbar .brand { font-size: 18px; }
+  .topbar .user {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 11px;
+  }
+
+  .wrap { padding: 18px 14px 50px; }
+
+  /* Card hero - mai compact */
+  .card-hero {
+    padding: 26px 22px;
+    margin-bottom: 22px;
+  }
+  .card-hero .name {
+    font-size: 30px;
+    margin-bottom: 22px;
+  }
+  .card-hero .discount-pct { font-size: 50px; }
+  .card-hero .discount-row { padding-top: 18px; }
+
+  /* KPIs - 2 pe rând */
+  .kpis {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .kpi { padding: 14px 14px; }
+  .kpi .lbl { font-size: 9px; }
+  .kpi .val { font-size: 22px; }
+
+  /* Tabs scrollable */
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs .tab {
+    padding: 10px 16px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* Table -> Cards */
+  .table-wrap { border: none; background: transparent; }
+  table thead { display: none; }
+  table tbody, table tr { display: block; }
+  table tr {
+    background: white;
+    border: 1px solid rgba(15, 17, 23, 0.12);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    padding: 14px;
+  }
+  table tr:hover { background: white; }
+  table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(15, 17, 23, 0.06);
+    font-size: 13px;
+    text-align: right;
+  }
+  table td:last-child { border-bottom: none; }
+  table td::before {
+    content: attr(data-label);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(15, 17, 23, 0.55);
+    font-weight: 600;
+  }
+  table td[data-label="Partener"] {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    border-bottom: 2px solid rgba(15, 17, 23, 0.1);
+    padding-bottom: 8px;
+  }
+
+  /* Oferte grid - 1 col */
+  .oferte-grid { grid-template-columns: 1fr; }
+
+  /* Profile - 1 col */
+  .profile-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 380px) {
+  .kpis { grid-template-columns: 1fr; }
+  .card-hero .name { font-size: 26px; }
+  .card-hero .discount-pct { font-size: 44px; }
+}
 </style>
 </head>
 <body>
@@ -512,14 +614,14 @@ async function loadIstoric() {
   tbody.innerHTML = allTx.map(function(t) {
     var pa = t.parteneri || {};
     return '<tr>' +
-      '<td>' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
-      '<td><strong>' + Clinica.escapeHtml(pa.denumire || "—") + '</strong>' +
-        (pa.oras ? '<br><span style="font-size:11px;color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(pa.oras) + '</span>' : '') +
+      '<td data-label="Partener"><strong>' + Clinica.escapeHtml(pa.denumire || "—") + '</strong>' +
+        (pa.oras ? '<span style="font-size:11px;color:rgba(15,17,23,0.5);margin-top:2px">' + Clinica.escapeHtml(pa.oras) + '</span>' : '') +
       '</td>' +
-      '<td style="font-size:12px">' + Clinica.escapeHtml(t.servicii || "—") + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:rgba(15,17,23,0.6)">' + Clinica.formatRON(t.pret_lista) + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:var(--green);font-weight:700">−' + Clinica.formatRON(t.economie) + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
+      '<td data-label="Data">' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
+      '<td data-label="Servicii" style="font-size:12px">' + Clinica.escapeHtml(t.servicii || "—") + '</td>' +
+      '<td data-label="Sumă listă" style="font-family:\'JetBrains Mono\',monospace;color:rgba(15,17,23,0.6)">' + Clinica.formatRON(t.pret_lista) + '</td>' +
+      '<td data-label="Discount" style="font-family:\'JetBrains Mono\',monospace;color:var(--green);font-weight:700">−' + Clinica.formatRON(t.economie) + '</td>' +
+      '<td data-label="Plătit" style="font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
     '</tr>';
   }).join("");
 }
