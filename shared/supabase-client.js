@@ -60,6 +60,16 @@ window.Clinica = {
       .maybeSingle();
     return data;
   },
+  async getReceptionerProfile() {
+    var user = await this.getCurrentUser();
+    if (!user) return null;
+    var { data } = await sb
+      .from("useri_receptioner")
+      .select("*, parteneri(id, cod, denumire, oras)")
+      .eq("id", user.id)
+      .maybeSingle();
+    return data;
+  },
   // Profil pacient — caută prin email
   async getPacientProfile() {
     var user = await this.getCurrentUser();
@@ -67,12 +77,12 @@ window.Clinica = {
     var { data } = await sb
       .from("pacienti")
       .select("*, niveluri_discount(denumire, culoare)")
-      .ilike("email", user.email)  // case-insensitive
+      .ilike("email", user.email)
       .eq("activ", true)
       .maybeSingle();
     return data;
   },
-  // Returnează tipul userului ('admin', 'partener', 'pacient', null)
+  // Returnează tipul userului ('admin', 'partener', 'receptioner', 'pacient', null)
   async getUserType() {
     var user = await this.getCurrentUser();
     if (!user) return null;
@@ -80,6 +90,8 @@ window.Clinica = {
     if (admin && admin.activ) return "admin";
     var partener = await this.getPartenerProfile();
     if (partener && partener.activ) return "partener";
+    var recept = await this.getReceptionerProfile();
+    if (recept && recept.activ) return "receptioner";
     var pacient = await this.getPacientProfile();
     if (pacient) return "pacient";
     return null;
@@ -111,9 +123,26 @@ window.Clinica = {
     }
     var profile = await this.getPartenerProfile();
     if (!profile || !profile.activ) {
-      alert("Nu ai permisiuni de partener.");
+      alert("Nu ai permisiuni de admin partener.");
       await this.signOut();
       window.location.href = "login.html?type=partener";
+      return null;
+    }
+    return profile;
+  },
+
+  async requireReceptioner() {
+    var user = await this.getCurrentUser();
+    if (!user) {
+      var current = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = "login.html?type=receptioner&next=" + current;
+      return null;
+    }
+    var profile = await this.getReceptionerProfile();
+    if (!profile || !profile.activ) {
+      alert("Nu ai permisiuni de recepționer.");
+      await this.signOut();
+      window.location.href = "login.html?type=receptioner";
       return null;
     }
     return profile;
@@ -229,6 +258,145 @@ window.Clinica = {
   },
 
   // ─── Parteneri ───
+  async listParteneri() {
+    var { data, error } = await sb
+      .from("parteneri")
+      .select("*")
+      .order("activ", { ascending: false })
+      .order("denumire", { ascending: true });
+    return { data, error };
+  },
+  async listParteneriActivi() {
+    var { data, error } = await sb
+      .from("parteneri")
+      .select("id, cod, denumire, oras")
+      .eq("activ", true)
+      .order("denumire", { ascending: true });
+    return { data, error };
+  },
+  async createPartener(payload) {
+    return await sb.from("parteneri").insert(payload).select().single();
+  },
+  async updatePartener(id, payload) {
+    return await sb.from("parteneri").update(payload).eq("id", id).select().single();
+  },
+  async togglePartenerActiv(id, activ) {
+    return await sb.from("parteneri").update({ activ: activ }).eq("id", id).select().single();
+  },
+
+  // ─── Useri parteneri (admin partener accounts) ───
+  async listUseriPartener() {
+    var { data, error } = await sb
+      .from("useri_partener")
+      .select("*, parteneri(id, cod, denumire)")
+      .order("created_at", { ascending: false });
+    return { data, error };
+  },
+
+  // Helper: salvează sesiunea curentă, face signUp, apoi restaurează sesiunea
+  async _createAuthUserAndRestore(email, password, metadata) {
+    // 1. Salvează sesiunea curentă (admin)
+    var { data: sessionData } = await sb.auth.getSession();
+    var currentSession = sessionData ? sessionData.session : null;
+    if (!currentSession) {
+      return { error: { message: 'Nu există sesiune activă. Loghează-te din nou.' } };
+    }
+
+    // 2. signUp pentru noul user (asta deconectează admin)
+    var { data: signUpData, error: signUpError } = await sb.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: metadata || {}
+      }
+    });
+
+    // 3. Restaurează sesiunea admin imediat — indiferent dacă signUp a mers sau nu
+    var { error: restoreError } = await sb.auth.setSession({
+      access_token: currentSession.access_token,
+      refresh_token: currentSession.refresh_token
+    });
+
+    if (restoreError) {
+      console.error("Session restore failed:", restoreError);
+      // Nu e fatal — admin va trebui să se logheze din nou
+    }
+
+    if (signUpError) return { error: signUpError };
+    if (!signUpData || !signUpData.user) return { error: { message: 'Userul nu a fost creat.' } };
+
+    return { data: signUpData };
+  },
+
+  async createUserPartener(email, password, partener_id, nume_complet) {
+    // Pas 1 — creează auth user păstrând sesiunea admin
+    var authResult = await this._createAuthUserAndRestore(email, password, {
+      nume_complet: nume_complet, role: 'partener'
+    });
+    if (authResult.error) return { error: authResult.error };
+
+    var newUserId = authResult.data.user.id;
+
+    // Pas 2 — bagă rândul în useri_partener
+    var { data: userData, error: userError } = await sb
+      .from("useri_partener")
+      .insert({
+        id: newUserId,
+        partener_id: partener_id,
+        email: email,
+        nume_complet: nume_complet || email,
+        activ: true
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      return { error: userError, partial: { auth_user_id: newUserId } };
+    }
+
+    return { data: userData };
+  },
+  async toggleUserPartenerActiv(id, activ) {
+    return await sb.from("useri_partener").update({ activ: activ }).eq("id", id).select().single();
+  },
+
+  // ─── Useri recepționere ───
+  async listUseriReceptioner() {
+    var { data, error } = await sb
+      .from("useri_receptioner")
+      .select("*, parteneri(id, cod, denumire)")
+      .order("created_at", { ascending: false });
+    return { data, error };
+  },
+  async createUserReceptioner(email, password, partener_id, nume_complet) {
+    var authResult = await this._createAuthUserAndRestore(email, password, {
+      nume_complet: nume_complet, role: 'receptioner'
+    });
+    if (authResult.error) return { error: authResult.error };
+
+    var newUserId = authResult.data.user.id;
+
+    var { data: userData, error: userError } = await sb
+      .from("useri_receptioner")
+      .insert({
+        id: newUserId,
+        partener_id: partener_id,
+        email: email,
+        nume_complet: nume_complet || email,
+        activ: true
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      return { error: userError, partial: { auth_user_id: newUserId } };
+    }
+
+    return { data: userData };
+  },
+  async toggleUserReceptionerActiv(id, activ) {
+    return await sb.from("useri_receptioner").update({ activ: activ }).eq("id", id).select().single();
+  },
   async listParteneri() {
     var { data, error } = await sb
       .from("parteneri")
