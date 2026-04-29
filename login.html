@@ -41,6 +41,7 @@ body {
 }
 .box.admin::before { background: var(--accent); }
 .box.partener::before { background: var(--gold); }
+.box.receptioner::before { background: #2c5282; }
 .box.pacient::before { background: var(--green); }
 
 .head {
@@ -65,6 +66,7 @@ body {
 .head h1 em { font-style: italic; }
 .box.admin h1 em { color: var(--accent); }
 .box.partener h1 em { color: var(--gold); }
+.box.receptioner h1 em { color: #2c5282; }
 .box.pacient h1 em { color: var(--green); }
 
 .head .sub {
@@ -262,7 +264,7 @@ body {
 <script>
 var params = new URLSearchParams(window.location.search);
 var loginType = params.get("type") || "admin";
-if (["admin", "partener", "pacient"].indexOf(loginType) < 0) loginType = "admin";
+if (["admin", "partener", "receptioner", "pacient"].indexOf(loginType) < 0) loginType = "admin";
 
 var box = document.getElementById("loginBox");
 box.classList.add(loginType);
@@ -270,7 +272,8 @@ box.classList.add(loginType);
 // Configure UI per type
 var titles = {
   admin: { title: 'Login <em>admin</em>', sub: 'Acces panou administrare' },
-  partener: { title: 'Login <em>partener</em>', sub: 'Acces pentru clinici partenere' },
+  partener: { title: 'Login <em>partener</em>', sub: 'Acces pentru admin clinică parteneră' },
+  receptioner: { title: 'Login <em>recepție</em>', sub: 'Pentru scanare QR și înregistrare tranzacții' },
   pacient: { title: 'Login <em>pacient</em>', sub: 'Acces la cardul tău și istoric' }
 };
 document.getElementById("loginTitle").innerHTML = titles[loginType].title;
@@ -279,31 +282,40 @@ document.title = "Login " + loginType + " · Clinica Central";
 
 // Dacă userul vine de la card.html (a scanat QR), arată mesaj special
 var nextParam = params.get("next") || "";
-if (nextParam.indexOf("card.html") >= 0 && loginType === "partener") {
+if (nextParam.indexOf("card.html") >= 0 && loginType === "receptioner") {
   document.getElementById("loginSub").innerHTML =
-    '<strong style="color:var(--gold)">📱 Pentru a procesa cardul scanat, loghează-te ca partener</strong>';
+    '<strong style="color:#2c5282">📱 Pentru a procesa cardul scanat, loghează-te ca recepționer</strong>';
 }
 
 // Show appropriate form
 if (loginType === "pacient") {
   document.getElementById("magicForm").style.display = "block";
 } else {
+  // admin, partener, receptioner — toate folosesc password
   document.getElementById("passwordForm").style.display = "block";
 }
 
 // Switch links
 var switches = {
   admin: [
-    { href: "login.html?type=partener", label: "Ești partener?" },
+    { href: "login.html?type=partener", label: "Ești admin partener?" },
+    { href: "login.html?type=receptioner", label: "Ești recepționer?" },
     { href: "login.html?type=pacient", label: "Ești pacient?" }
   ],
   partener: [
     { href: "login.html?type=admin", label: "Ești admin?" },
+    { href: "login.html?type=receptioner", label: "Ești recepționer?" },
+    { href: "login.html?type=pacient", label: "Ești pacient?" }
+  ],
+  receptioner: [
+    { href: "login.html?type=admin", label: "Ești admin?" },
+    { href: "login.html?type=partener", label: "Ești admin partener?" },
     { href: "login.html?type=pacient", label: "Ești pacient?" }
   ],
   pacient: [
     { href: "login.html?type=admin", label: "Ești admin?" },
-    { href: "login.html?type=partener", label: "Ești partener?" }
+    { href: "login.html?type=partener", label: "Ești admin partener?" },
+    { href: "login.html?type=receptioner", label: "Ești recepționer?" }
   ]
 };
 var switchHtml = "";
@@ -334,6 +346,9 @@ function showSuccess(html) {
   } else if (type === "partener") {
     var next = params.get("next");
     window.location.href = next || "partener.html";
+  } else if (type === "receptioner") {
+    var next = params.get("next");
+    window.location.href = next || "receptie.html";
   } else if (type === "pacient") {
     var next = params.get("next");
     window.location.href = next || "pacient.html";
@@ -380,7 +395,7 @@ document.getElementById("passwordForm").addEventListener("submit", async functio
   if (next) {
     window.location.href = next;
   } else {
-    var dest = { admin: "dashboard.html", partener: "partener.html", pacient: "pacient.html" };
+    var dest = { admin: "dashboard.html", partener: "partener.html", receptioner: "receptie.html", pacient: "pacient.html" };
     window.location.href = dest[actualType];
   }
 });
