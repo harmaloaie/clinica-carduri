@@ -309,12 +309,151 @@ tbody tr:hover { background: var(--cream); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-@media (max-width: 600px) {
-  .topbar { padding: 12px 16px; }
+/* ═══════ MOBILE OPTIMIZATIONS ═══════ */
+@media (max-width: 768px) {
+  /* Topbar — compact */
+  .topbar {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
   .topbar .brand { font-size: 18px; }
-  .wrap { padding: 24px 16px 40px; }
-  .section-head h1 { font-size: 26px; }
-  .welcome { padding: 22px; }
+  .topbar .partener-tag {
+    font-size: 10px;
+    width: 100%;
+  }
+  .topbar .user {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 11px;
+  }
+
+  /* Wrap — fără padding excesiv */
+  .wrap { padding: 18px 14px 40px; }
+
+  /* Welcome card — mai compact */
+  .welcome {
+    padding: 22px 18px;
+    margin-bottom: 22px;
+  }
+  .welcome h2 { font-size: 22px; }
+  .welcome p { font-size: 13px; }
+
+  /* Manual code box — TARGET MAJOR pentru mobile */
+  .welcome .manual-code-box { padding: 14px 14px; }
+  .welcome .code-input-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .welcome .code-input-row input {
+    width: 100%;
+    padding: 14px 14px;
+    font-size: 16px;  /* iOS zoom prevention */
+    text-align: center;
+    letter-spacing: 0.1em;
+  }
+  .welcome .code-input-row button {
+    width: 100%;
+    padding: 14px;
+    font-size: 14px;
+  }
+  .welcome .manual-code-box .hint {
+    font-size: 11px;
+    text-align: center;
+  }
+
+  /* Section head — stack */
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .section-head h1 { font-size: 24px; }
+  .section-head .actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .section-head .actions button {
+    flex: 1;
+    padding: 10px 12px;
+  }
+
+  /* KPIs — 2 pe rând în loc de auto */
+  .kpis {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .kpi { padding: 14px 14px; }
+  .kpi .lbl { font-size: 9px; }
+  .kpi .val { font-size: 22px; }
+
+  /* Filter row — stack */
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .filter-row label { font-size: 9px; }
+  .filter-row input[type=date] {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  /* Table — convert to cards on mobile */
+  .table-wrap {
+    border: none;
+    background: transparent;
+  }
+  table thead { display: none; }
+  table tbody, table tr { display: block; }
+  table tr {
+    background: white;
+    border: 1px solid rgba(15, 17, 23, 0.12);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    padding: 14px;
+  }
+  table tr:hover { background: white; }
+  table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(15, 17, 23, 0.06);
+    font-size: 13px;
+    text-align: right;
+  }
+  table td:last-child { border-bottom: none; }
+  table td::before {
+    content: attr(data-label);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(15, 17, 23, 0.55);
+    font-weight: 600;
+    margin-right: 12px;
+  }
+  table td[data-label="Pacient"] {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    border-bottom: 2px solid rgba(15, 17, 23, 0.1);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  table td[data-label="Pacient"]::before {
+    margin-bottom: 4px;
+  }
+}
+
+@media (max-width: 380px) {
+  .kpis { grid-template-columns: 1fr; }
+  .welcome h2 { font-size: 20px; }
+  .section-head h1 { font-size: 22px; }
 }
 </style>
 </head>
@@ -452,15 +591,16 @@ async function loadTranzactii() {
   tbody.innerHTML = allTx.map(function(t) {
     var p = t.pacienti || {};
     return '<tr>' +
-      '<td>' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
-      '<td class="cod">' + Clinica.escapeHtml(t.cod_referinta) + '</td>' +
-      '<td><strong>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '</strong></td>' +
-      '<td class="cod">' + Clinica.escapeHtml(p.cod_card || "—") + '</td>' +
-      '<td style="font-size:12px">' + Clinica.escapeHtml(t.servicii || "—") + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace">' + Clinica.formatRON(t.pret_lista) + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
-      '<td style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:var(--green)">' + Clinica.formatRON(t.economie) + '</td>' +
-      '<td><span class="status-tag ' + Clinica.escapeHtml(t.status) + '">' + Clinica.escapeHtml(t.status) + '</span></td>' +
+      '<td data-label="Pacient"><strong>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '</strong>' +
+        '<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:rgba(15,17,23,0.55);margin-top:2px">' + Clinica.escapeHtml(p.cod_card || "—") + '</span>' +
+      '</td>' +
+      '<td data-label="Data">' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
+      '<td data-label="Cod ref" class="cod">' + Clinica.escapeHtml(t.cod_referinta) + '</td>' +
+      '<td data-label="Servicii" style="font-size:12px">' + Clinica.escapeHtml(t.servicii || "—") + '</td>' +
+      '<td data-label="Sumă listă" style="font-family:\'JetBrains Mono\',monospace">' + Clinica.formatRON(t.pret_lista) + '</td>' +
+      '<td data-label="Plătit" style="font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
+      '<td data-label="Discount" style="font-family:\'JetBrains Mono\',monospace;color:var(--green)">' + Clinica.formatRON(t.economie) + '</td>' +
+      '<td data-label="Status"><span class="status-tag ' + Clinica.escapeHtml(t.status) + '">' + Clinica.escapeHtml(t.status) + '</span></td>' +
     '</tr>';
   }).join("");
 }
