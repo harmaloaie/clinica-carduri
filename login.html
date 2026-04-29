@@ -249,6 +249,13 @@ document.getElementById("loginTitle").innerHTML = titles[loginType].title;
 document.getElementById("loginSub").textContent = titles[loginType].sub;
 document.title = "Login " + loginType + " · Clinica Central";
 
+// Dacă userul vine de la card.html (a scanat QR), arată mesaj special
+var nextParam = params.get("next") || "";
+if (nextParam.indexOf("card.html") >= 0 && loginType === "partener") {
+  document.getElementById("loginSub").innerHTML =
+    '<strong style="color:var(--gold)">📱 Pentru a procesa cardul scanat, loghează-te ca partener</strong>';
+}
+
 // Show appropriate form
 if (loginType === "pacient") {
   document.getElementById("magicForm").style.display = "block";
