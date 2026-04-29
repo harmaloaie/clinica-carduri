@@ -501,18 +501,19 @@ var userType = null; // 'partener' sau 'receptioner'
   // Detectează ce tip de user e logat
   userType = await Clinica.getUserType();
 
-  // card.html acceptă: receptioner (recomandat) și partener (admin partener)
-  // Admin general și pacient → redirecționăm la pagina lor
-  if (userType === "admin") {
-    window.location.href = "dashboard.html";
-    return;
-  }
-  if (userType === "pacient") {
-    window.location.href = "pacient.html";
+  // card.html e DOAR pentru receptioner sau admin partener
+  // Admin general SAU pacient care scanează QR → forțăm logout și redirect la login receptioner
+  if (userType === "admin" || userType === "pacient") {
+    // Salvează URL-ul curent pentru a reveni după login
+    var current = window.location.pathname + window.location.search;
+    // Logout silent ca să eliberezi sesiunea
+    await Clinica.signOut();
+    // Redirect la login receptioner cu mesaj clar
+    window.location.href = "login.html?type=receptioner&next=" + encodeURIComponent(current);
     return;
   }
 
-  // Dacă nu e logat, redirect la receptioner login (default pentru flow QR scan)
+  // Dacă nu e logat deloc, redirect la receptioner login
   if (!userType) {
     var current = encodeURIComponent(window.location.pathname + window.location.search);
     window.location.href = "login.html?type=receptioner&next=" + current;
@@ -529,7 +530,7 @@ var userType = null; // 'partener' sau 'receptioner'
   if (!partenerProfile || !partenerProfile.activ) {
     alert("Profil invalid. Te rog să te loghezi din nou.");
     await Clinica.signOut();
-    window.location.href = "index.html";
+    window.location.href = "login.html?type=receptioner";
     return;
   }
 
