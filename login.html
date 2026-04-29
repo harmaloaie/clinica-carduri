@@ -180,6 +180,34 @@ body {
   text-decoration: none;
 }
 .switch-links a:hover { color: var(--ink); }
+
+/* ═══════ MOBILE OPTIMIZATIONS ═══════ */
+@media (max-width: 600px) {
+  body { padding: 14px; align-items: flex-start; padding-top: 30px; }
+  .box {
+    padding: 28px 22px;
+    border-radius: 4px;
+  }
+  .head { margin-bottom: 22px; padding-bottom: 16px; }
+  .head h1 { font-size: 26px; }
+  .head .sub { font-size: 12px; }
+
+  .field input {
+    font-size: 16px !important;  /* prevents iOS zoom */
+    padding: 14px 14px;
+  }
+  .field label { font-size: 11px; }
+
+  .btn {
+    padding: 16px;
+    font-size: 15px;
+  }
+
+  .info-magic {
+    padding: 14px;
+    font-size: 12px;
+  }
+}
 </style>
 </head>
 <body>
