@@ -196,9 +196,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 /* KPIs */
 .kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
   margin-bottom: 28px;
+}
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
 }
 .kpi {
   background: white;
@@ -511,12 +514,11 @@ tbody tr:hover { background: var(--cream); }
     <table>
       <thead>
         <tr>
+          <th>Pacient</th>
           <th>Data</th>
           <th>Cod ref</th>
-          <th>Pacient</th>
-          <th>Card</th>
           <th>Servicii</th>
-          <th style="text-align:right">Listă</th>
+          <th style="text-align:right">Sumă listă</th>
           <th style="text-align:right">Plătit</th>
           <th style="text-align:right">Discount</th>
           <th>Status</th>
@@ -601,7 +603,7 @@ async function loadTranzactii() {
   document.getElementById("txWrap").style.display = "block";
 
   if (!allTx.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty"><h3>Fără tranzacții</h3>Scanează un QR de pe cardul unui pacient pentru a începe.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty"><h3>Fără tranzacții</h3>Scanează un QR de pe cardul unui pacient pentru a începe.</td></tr>';
     return;
   }
 
@@ -609,14 +611,14 @@ async function loadTranzactii() {
     var p = t.pacienti || {};
     return '<tr>' +
       '<td data-label="Pacient"><strong>' + Clinica.escapeHtml((p.prenume || "") + " " + (p.nume || "")) + '</strong>' +
-        '<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:rgba(15,17,23,0.55);margin-top:2px">' + Clinica.escapeHtml(p.cod_card || "—") + '</span>' +
+        '<br><span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:rgba(15,17,23,0.55)">' + Clinica.escapeHtml(p.cod_card || "—") + '</span>' +
       '</td>' +
-      '<td data-label="Data">' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
-      '<td data-label="Cod ref" class="cod">' + Clinica.escapeHtml(t.cod_referinta) + '</td>' +
+      '<td data-label="Data" style="white-space:nowrap">' + Clinica.escapeHtml(Clinica.formatDate(t.created_at)) + '</td>' +
+      '<td data-label="Cod ref" class="cod" style="font-size:11px">' + Clinica.escapeHtml(t.cod_referinta) + '</td>' +
       '<td data-label="Servicii" style="font-size:12px">' + Clinica.escapeHtml(t.servicii || "—") + '</td>' +
-      '<td data-label="Sumă listă" style="font-family:\'JetBrains Mono\',monospace">' + Clinica.formatRON(t.pret_lista) + '</td>' +
-      '<td data-label="Plătit" style="font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
-      '<td data-label="Discount" style="font-family:\'JetBrains Mono\',monospace;color:var(--green)">' + Clinica.formatRON(t.economie) + '</td>' +
+      '<td data-label="Sumă listă" style="text-align:right;font-family:\'JetBrains Mono\',monospace">' + Clinica.formatRON(t.pret_lista) + '</td>' +
+      '<td data-label="Plătit" style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-weight:700">' + Clinica.formatRON(t.pret_platit) + '</td>' +
+      '<td data-label="Discount" style="text-align:right;font-family:\'JetBrains Mono\',monospace;color:var(--green)">−' + Clinica.formatRON(t.economie) + '</td>' +
       '<td data-label="Status"><span class="status-tag ' + Clinica.escapeHtml(t.status) + '">' + Clinica.escapeHtml(t.status) + '</span></td>' +
     '</tr>';
   }).join("");
