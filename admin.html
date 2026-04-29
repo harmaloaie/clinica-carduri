@@ -418,7 +418,9 @@ tbody tr:hover { background: var(--cream); }
   <!-- Tab navigation -->
   <div class="tabs">
     <button class="tab active" data-tab="pacienti">Pacienți</button>
-    <button class="tab" data-tab="niveluri">Niveluri discount</button>
+    <button class="tab" data-tab="parteneri">Parteneri</button>
+    <button class="tab" data-tab="receptioneri">Recepționere</button>
+    <button class="tab" data-tab="niveluri">Niveluri</button>
   </div>
 
   <!-- ════════════════════════════════════════════════════════════ -->
@@ -465,6 +467,80 @@ tbody tr:hover { background: var(--cream); }
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- TAB: PARTENERI                                               -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="tab-panel" id="panel-parteneri">
+
+    <div class="section-head">
+      <h1>Parteneri & <em>conturi admin</em></h1>
+      <div class="actions">
+        <button class="btn-sm" id="reloadPartBtn">↻ Reîncarcă</button>
+        <button class="btn-sm primary" id="addPartBtn">+ Adaugă partener</button>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:rgba(15,17,23,0.6);margin-bottom:20px;line-height:1.5">
+      Adaugă o clinică/laborator partener și opțional un cont admin pentru proprietar/manager (acces la dashboard cu KPIs).
+    </p>
+
+    <div id="loadingPart" class="loading">Se încarcă partenerii...</div>
+
+    <div class="table-wrap" id="partWrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>Partener</th>
+            <th>Cod</th>
+            <th>Oraș</th>
+            <th>Telefon</th>
+            <th>Conturi admin</th>
+            <th>Status</th>
+            <th style="text-align:right">Acțiuni</th>
+          </tr>
+        </thead>
+        <tbody id="partTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- TAB: RECEPȚIONERE                                            -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="tab-panel" id="panel-receptioneri">
+
+    <div class="section-head">
+      <h1>Recepționere <em>(operatori)</em></h1>
+      <div class="actions">
+        <button class="btn-sm" id="reloadRecBtn">↻ Reîncarcă</button>
+        <button class="btn-sm primary" id="addRecBtn">+ Adaugă recepționer</button>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:rgba(15,17,23,0.6);margin-bottom:20px;line-height:1.5">
+      Operatori care scanează QR și înregistrează tranzacții. Fiecare e asociat cu un partener.
+      <strong>NU au acces la dashboard, doar la pagina de scanare.</strong>
+    </p>
+
+    <div id="loadingRec" class="loading">Se încarcă recepționerele...</div>
+
+    <div class="table-wrap" id="recWrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>Nume</th>
+            <th>Email</th>
+            <th>Partener</th>
+            <th>Status</th>
+            <th>Creat la</th>
+            <th style="text-align:right">Acțiuni</th>
+          </tr>
+        </thead>
+        <tbody id="recTbody"></tbody>
       </table>
     </div>
   </section>
@@ -669,14 +745,164 @@ tbody tr:hover { background: var(--cream); }
   </div>
 </div>
 
+<!-- Modal: Add/Edit Partener -->
+<div class="modal-bg" id="partModalBg">
+  <div class="modal">
+    <h2 id="partModalTitle">Partener <em>nou</em></h2>
+    <p class="help">Date despre clinica/laboratorul partener.</p>
+
+    <div class="banner-error" id="partModalError"></div>
+
+    <form id="partForm" autocomplete="off">
+      <input type="hidden" id="partId">
+
+      <div class="row2">
+        <div class="field">
+          <label>Cod partener *</label>
+          <input type="text" id="partCod" required placeholder="ex. BINISAN" style="text-transform:uppercase;font-family:'JetBrains Mono',monospace">
+        </div>
+        <div class="field">
+          <label>Denumire *</label>
+          <input type="text" id="partDenumire" required placeholder="ex. Laborator Binisan">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Oraș</label>
+          <input type="text" id="partOras" placeholder="ex. Pitești">
+        </div>
+        <div class="field">
+          <label>Telefon</label>
+          <input type="text" id="partTelefon" placeholder="ex. 0721111111">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Adresă</label>
+        <input type="text" id="partAdresa" placeholder="Strada, număr, etc.">
+      </div>
+
+      <div class="field">
+        <label>Email contact</label>
+        <input type="email" id="partEmail" placeholder="contact@example.ro">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="partModalCancel">Anulează</button>
+        <button type="submit" class="btn btn-primary" id="partModalSave">Salvează</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Adaugă cont admin partener (separat de creare partener) -->
+<div class="modal-bg" id="adminPartModalBg">
+  <div class="modal">
+    <h2>Cont admin <em>partener</em></h2>
+    <p class="help">Creează un cont de admin partener pentru: <strong id="adminPartTargetName">—</strong></p>
+
+    <div class="banner-error" id="adminPartModalError"></div>
+
+    <div style="background:rgba(184,151,58,0.12);border:1px solid var(--gold);padding:12px 14px;border-radius:2px;font-size:12px;margin-bottom:16px;line-height:1.5;color:#5a4f30">
+      ⚠️ <strong>Important:</strong> Vei seta o parolă pentru noul user. Comunicați parola DIRECT persoanei (nu prin email).
+      User-ul va putea schimba parola după prima logare.
+    </div>
+
+    <form id="adminPartForm" autocomplete="off">
+      <input type="hidden" id="adminPartTargetId">
+
+      <div class="field">
+        <label>Email *</label>
+        <input type="email" id="adminPartEmail" required placeholder="ex. director@binisan.ro">
+      </div>
+
+      <div class="field">
+        <label>Nume complet</label>
+        <input type="text" id="adminPartNume" placeholder="ex. Mariana Popescu">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Parolă *</label>
+          <input type="password" id="adminPartPass" required minlength="8" placeholder="min 8 caractere">
+        </div>
+        <div class="field">
+          <label>Confirmă parola *</label>
+          <input type="password" id="adminPartPass2" required minlength="8" placeholder="rescrie parola">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="adminPartModalCancel">Anulează</button>
+        <button type="submit" class="btn btn-primary" id="adminPartModalSave">Creează cont</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Adaugă recepționer -->
+<div class="modal-bg" id="recModalBg">
+  <div class="modal">
+    <h2>Recepționer <em>nou</em></h2>
+    <p class="help">Cont de operator pentru scanare QR și înregistrare tranzacții.</p>
+
+    <div class="banner-error" id="recModalError"></div>
+
+    <div style="background:rgba(44,82,130,0.12);border:1px solid #2c5282;padding:12px 14px;border-radius:2px;font-size:12px;margin-bottom:16px;line-height:1.5;color:#1a3a5c">
+      ⚠️ <strong>Important:</strong> Recepționera NU are acces la dashboard, doar la scanarea QR și înregistrarea tranzacțiilor. Comunicați parola DIRECT persoanei.
+    </div>
+
+    <form id="recForm" autocomplete="off">
+      <div class="field">
+        <label>Partener (clinica) *</label>
+        <select id="recPartener" required>
+          <option value="">— Selectează partener —</option>
+        </select>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Email *</label>
+          <input type="email" id="recEmail" required placeholder="ex. receptie@binisan.ro">
+        </div>
+        <div class="field">
+          <label>Nume complet</label>
+          <input type="text" id="recNume" placeholder="ex. Ana Popa">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Parolă *</label>
+          <input type="password" id="recPass" required minlength="8" placeholder="min 8 caractere">
+        </div>
+        <div class="field">
+          <label>Confirmă parola *</label>
+          <input type="password" id="recPass2" required minlength="8" placeholder="rescrie parola">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="recModalCancel">Anulează</button>
+        <button type="submit" class="btn btn-primary" id="recModalSave">Creează cont</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared/config.js"></script>
 <script src="shared/supabase-client.js"></script>
 <script>
 var allPacienti = [];
 var allNiveluri = [];
+var allParteneri = [];
+var allUseriPartener = [];
+var allReceptioneri = [];
 var currentEditId = null;
 var currentEditNivelId = null;
+var currentEditPartId = null;
 
 (async function init() {
   var profile = await Clinica.requireAdmin();
@@ -1015,9 +1241,13 @@ document.querySelectorAll(".tab").forEach(function(t) {
     t.classList.add("active");
     document.getElementById("panel-" + t.dataset.tab).classList.add("active");
 
-    // La schimbare la tab niveluri, reîncarcă datele
+    // La schimbare la tab, încarcă datele lazy
     if (t.dataset.tab === "niveluri") {
       renderNiveluri();
+    } else if (t.dataset.tab === "parteneri") {
+      loadParteneriTab();
+    } else if (t.dataset.tab === "receptioneri") {
+      loadReceptioneriTab();
     }
   });
 });
@@ -1199,6 +1429,379 @@ async function deleteNivelConfirm(n) {
 document.getElementById("reloadNivBtn").addEventListener("click", async function() {
   await loadNiveluri();
   renderNiveluri();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// PARTENERI TAB
+// ═══════════════════════════════════════════════════════════════
+
+async function loadParteneriTab() {
+  document.getElementById("loadingPart").style.display = "flex";
+  document.getElementById("partWrap").style.display = "none";
+
+  var partResult = await Clinica.listParteneri();
+  var userResult = await Clinica.listUseriPartener();
+
+  document.getElementById("loadingPart").style.display = "none";
+  document.getElementById("partWrap").style.display = "block";
+
+  if (partResult.error) {
+    console.error(partResult.error);
+    return;
+  }
+
+  allParteneri = partResult.data || [];
+  allUseriPartener = userResult.data || [];
+
+  renderParteneri();
+}
+
+function renderParteneri() {
+  var tbody = document.getElementById("partTbody");
+  if (!allParteneri.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty"><h3>Niciun partener</h3>Apasă „+ Adaugă partener" pentru a începe.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allParteneri.map(function(p) {
+    var conturi = allUseriPartener.filter(function(u) { return u.partener_id === p.id; });
+    var nrConturi = conturi.length;
+    var contLista = conturi.map(function(c) {
+      return '<div style="font-size:11px;color:rgba(15,17,23,0.7)">' +
+             (c.activ ? '✓' : '✗') + ' ' + Clinica.escapeHtml(c.email) + '</div>';
+    }).join("");
+
+    var rowStyle = p.activ ? '' : 'opacity:0.45';
+
+    return '<tr style="' + rowStyle + '">' +
+      '<td><strong>' + Clinica.escapeHtml(p.denumire) + '</strong>' +
+        (p.adresa ? '<br><span style="font-size:11px;color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(p.adresa) + '</span>' : '') +
+      '</td>' +
+      '<td class="cod">' + Clinica.escapeHtml(p.cod) + '</td>' +
+      '<td>' + Clinica.escapeHtml(p.oras || "—") + '</td>' +
+      '<td style="font-size:12px">' + Clinica.escapeHtml(p.telefon || "—") + '</td>' +
+      '<td>' + (nrConturi > 0
+          ? contLista
+          : '<span style="color:rgba(15,17,23,0.4);font-size:12px;font-style:italic">— niciun cont —</span>'
+        ) + '</td>' +
+      '<td>' + (p.activ
+          ? '<span class="nivel-status-active">Activ</span>'
+          : '<span class="nivel-status-inactive">Inactiv</span>') +
+      '</td>' +
+      '<td><div class="row-actions">' +
+        '<button data-part-act="edit" data-id="' + p.id + '">Edit</button>' +
+        '<button data-part-act="addAdmin" data-id="' + p.id + '" style="color:var(--gold);border-color:var(--gold)">+ Cont admin</button>' +
+        (p.activ
+          ? '<button data-part-act="deactivate" data-id="' + p.id + '" style="color:var(--accent);border-color:var(--accent)">Dezactivează</button>'
+          : '<button data-part-act="reactivate" data-id="' + p.id + '" style="color:var(--green);border-color:var(--green)">Reactivează</button>'
+        ) +
+      '</div></td>' +
+    '</tr>';
+  }).join("");
+
+  // Bind actions
+  tbody.querySelectorAll("button[data-part-act]").forEach(function(btn) {
+    btn.addEventListener("click", async function() {
+      var id = btn.dataset.id;
+      var p = allParteneri.find(function(x) { return x.id === id; });
+      if (!p) return;
+      var act = btn.dataset.partAct;
+      if (act === "edit") openEditPartenerModal(p);
+      else if (act === "addAdmin") openAddAdminPartenerModal(p);
+      else if (act === "deactivate") await togglePartenerActiv(p, false);
+      else if (act === "reactivate") await togglePartenerActiv(p, true);
+    });
+  });
+}
+
+document.getElementById("addPartBtn").addEventListener("click", function() {
+  currentEditPartId = null;
+  document.getElementById("partModalTitle").innerHTML = 'Partener <em>nou</em>';
+  document.getElementById("partForm").reset();
+  document.getElementById("partId").value = "";
+  document.getElementById("partModalError").classList.remove("show");
+  document.getElementById("partModalBg").classList.add("show");
+});
+
+function openEditPartenerModal(p) {
+  currentEditPartId = p.id;
+  document.getElementById("partModalTitle").innerHTML = 'Editare <em>partener</em>';
+  document.getElementById("partId").value = p.id;
+  document.getElementById("partCod").value = p.cod || "";
+  document.getElementById("partDenumire").value = p.denumire || "";
+  document.getElementById("partOras").value = p.oras || "";
+  document.getElementById("partTelefon").value = p.telefon || "";
+  document.getElementById("partAdresa").value = p.adresa || "";
+  document.getElementById("partEmail").value = p.email || "";
+  document.getElementById("partModalError").classList.remove("show");
+  document.getElementById("partModalBg").classList.add("show");
+}
+
+document.getElementById("partModalCancel").addEventListener("click", function() {
+  document.getElementById("partModalBg").classList.remove("show");
+});
+
+document.getElementById("partForm").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+  var btn = document.getElementById("partModalSave");
+  btn.disabled = true; btn.textContent = "Se salvează...";
+
+  var payload = {
+    cod: document.getElementById("partCod").value.trim().toUpperCase(),
+    denumire: document.getElementById("partDenumire").value.trim(),
+    oras: document.getElementById("partOras").value.trim() || null,
+    telefon: document.getElementById("partTelefon").value.trim() || null,
+    adresa: document.getElementById("partAdresa").value.trim() || null,
+    email: document.getElementById("partEmail").value.trim() || null
+  };
+
+  var result;
+  if (currentEditPartId) {
+    result = await Clinica.updatePartener(currentEditPartId, payload);
+  } else {
+    result = await Clinica.createPartener(payload);
+  }
+
+  btn.disabled = false; btn.textContent = "Salvează";
+
+  if (result.error) {
+    var err = document.getElementById("partModalError");
+    err.textContent = "Eroare: " + (result.error.message || "necunoscută");
+    err.classList.add("show");
+    return;
+  }
+
+  document.getElementById("partModalBg").classList.remove("show");
+  await loadParteneriTab();
+});
+
+async function togglePartenerActiv(p, activ) {
+  var msg = activ
+    ? "Reactivezi partenerul \"" + p.denumire + "\"?"
+    : "Dezactivezi partenerul \"" + p.denumire + "\"?\n\nTranzacțiile lui rămân în baza de date.";
+  if (!confirm(msg)) return;
+  var { error } = await Clinica.togglePartenerActiv(p.id, activ);
+  if (error) { alert("Eroare: " + (error.message || "")); return; }
+  await loadParteneriTab();
+}
+
+// ─── Modal: Add admin partener account ───
+function openAddAdminPartenerModal(p) {
+  document.getElementById("adminPartTargetId").value = p.id;
+  document.getElementById("adminPartTargetName").textContent = p.denumire;
+  document.getElementById("adminPartForm").reset();
+  document.getElementById("adminPartModalError").classList.remove("show");
+  document.getElementById("adminPartModalBg").classList.add("show");
+}
+
+document.getElementById("adminPartModalCancel").addEventListener("click", function() {
+  document.getElementById("adminPartModalBg").classList.remove("show");
+});
+
+document.getElementById("adminPartForm").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+
+  var partener_id = document.getElementById("adminPartTargetId").value;
+  var email = document.getElementById("adminPartEmail").value.trim();
+  var nume = document.getElementById("adminPartNume").value.trim();
+  var pass = document.getElementById("adminPartPass").value;
+  var pass2 = document.getElementById("adminPartPass2").value;
+
+  if (pass !== pass2) {
+    var err = document.getElementById("adminPartModalError");
+    err.textContent = "Parolele nu coincid.";
+    err.classList.add("show");
+    return;
+  }
+  if (pass.length < 8) {
+    var err = document.getElementById("adminPartModalError");
+    err.textContent = "Parola trebuie să aibă minim 8 caractere.";
+    err.classList.add("show");
+    return;
+  }
+
+  var btn = document.getElementById("adminPartModalSave");
+  btn.disabled = true; btn.textContent = "Se creează...";
+
+  var result = await Clinica.createUserPartener(email, pass, partener_id, nume);
+
+  btn.disabled = false; btn.textContent = "Creează cont";
+
+  if (result.error) {
+    var err = document.getElementById("adminPartModalError");
+    err.textContent = "Eroare: " + (result.error.message || "necunoscută");
+    err.classList.add("show");
+    return;
+  }
+
+  alert("✓ Cont creat cu succes!\n\nEmail: " + email + "\nParolă: (cea pe care ai setat-o)\n\nComunică credentialele direct utilizatorului.");
+  document.getElementById("adminPartModalBg").classList.remove("show");
+  await loadParteneriTab();
+});
+
+document.getElementById("reloadPartBtn").addEventListener("click", loadParteneriTab);
+
+// ═══════════════════════════════════════════════════════════════
+// RECEPȚIONERE TAB
+// ═══════════════════════════════════════════════════════════════
+
+async function loadReceptioneriTab() {
+  document.getElementById("loadingRec").style.display = "flex";
+  document.getElementById("recWrap").style.display = "none";
+
+  // Asigură parteneri încărcați (pentru dropdown)
+  if (!allParteneri.length) {
+    var partResult = await Clinica.listParteneri();
+    allParteneri = partResult.data || [];
+  }
+
+  var recResult = await Clinica.listUseriReceptioner();
+
+  document.getElementById("loadingRec").style.display = "none";
+  document.getElementById("recWrap").style.display = "block";
+
+  if (recResult.error) {
+    console.error(recResult.error);
+    return;
+  }
+
+  allReceptioneri = recResult.data || [];
+  renderReceptioneri();
+}
+
+function renderReceptioneri() {
+  var tbody = document.getElementById("recTbody");
+  if (!allReceptioneri.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty"><h3>Nicio recepționeră</h3>Apasă „+ Adaugă recepționer" pentru a începe.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = allReceptioneri.map(function(r) {
+    var pa = r.parteneri || {};
+    var rowStyle = r.activ ? '' : 'opacity:0.45';
+
+    return '<tr style="' + rowStyle + '">' +
+      '<td><strong>' + Clinica.escapeHtml(r.nume_complet || "—") + '</strong></td>' +
+      '<td style="font-size:12px;font-family:\'JetBrains Mono\',monospace">' + Clinica.escapeHtml(r.email) + '</td>' +
+      '<td>' + Clinica.escapeHtml(pa.denumire || "—") + '</td>' +
+      '<td>' + (r.activ
+          ? '<span class="nivel-status-active">Activ</span>'
+          : '<span class="nivel-status-inactive">Inactiv</span>') +
+      '</td>' +
+      '<td style="font-size:11px;color:rgba(15,17,23,0.55)">' + Clinica.escapeHtml(Clinica.formatDate(r.created_at)) + '</td>' +
+      '<td><div class="row-actions">' +
+        (r.activ
+          ? '<button data-rec-act="deactivate" data-id="' + r.id + '" style="color:var(--accent);border-color:var(--accent)">Dezactivează</button>'
+          : '<button data-rec-act="reactivate" data-id="' + r.id + '" style="color:var(--green);border-color:var(--green)">Reactivează</button>'
+        ) +
+      '</div></td>' +
+    '</tr>';
+  }).join("");
+
+  tbody.querySelectorAll("button[data-rec-act]").forEach(function(btn) {
+    btn.addEventListener("click", async function() {
+      var id = btn.dataset.id;
+      var r = allReceptioneri.find(function(x) { return x.id === id; });
+      if (!r) return;
+      var act = btn.dataset.recAct;
+      if (act === "deactivate" || act === "reactivate") {
+        var activ = (act === "reactivate");
+        var msg = activ
+          ? "Reactivezi recepționera \"" + (r.nume_complet || r.email) + "\"?"
+          : "Dezactivezi recepționera \"" + (r.nume_complet || r.email) + "\"?\n\nNu va mai putea înregistra tranzacții.";
+        if (!confirm(msg)) return;
+        var { error } = await Clinica.toggleUserReceptionerActiv(r.id, activ);
+        if (error) { alert("Eroare: " + (error.message || "")); return; }
+        await loadReceptioneriTab();
+      }
+    });
+  });
+}
+
+document.getElementById("addRecBtn").addEventListener("click", async function() {
+  // Asigură parteneri încărcați
+  if (!allParteneri.length) {
+    var partResult = await Clinica.listParteneriActivi();
+    allParteneri = partResult.data || [];
+  }
+
+  // Populează dropdown-ul de parteneri
+  var sel = document.getElementById("recPartener");
+  sel.innerHTML = '<option value="">— Selectează partener —</option>';
+  allParteneri.filter(function(p) { return p.activ; }).forEach(function(p) {
+    var opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.denumire + (p.oras ? " · " + p.oras : "");
+    sel.appendChild(opt);
+  });
+
+  document.getElementById("recForm").reset();
+  document.getElementById("recModalError").classList.remove("show");
+  document.getElementById("recModalBg").classList.add("show");
+});
+
+document.getElementById("recModalCancel").addEventListener("click", function() {
+  document.getElementById("recModalBg").classList.remove("show");
+});
+
+document.getElementById("recForm").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+
+  var partener_id = document.getElementById("recPartener").value;
+  var email = document.getElementById("recEmail").value.trim();
+  var nume = document.getElementById("recNume").value.trim();
+  var pass = document.getElementById("recPass").value;
+  var pass2 = document.getElementById("recPass2").value;
+
+  if (!partener_id) {
+    var err = document.getElementById("recModalError");
+    err.textContent = "Selectează un partener.";
+    err.classList.add("show");
+    return;
+  }
+  if (pass !== pass2) {
+    var err = document.getElementById("recModalError");
+    err.textContent = "Parolele nu coincid.";
+    err.classList.add("show");
+    return;
+  }
+  if (pass.length < 8) {
+    var err = document.getElementById("recModalError");
+    err.textContent = "Parola trebuie să aibă minim 8 caractere.";
+    err.classList.add("show");
+    return;
+  }
+
+  var btn = document.getElementById("recModalSave");
+  btn.disabled = true; btn.textContent = "Se creează...";
+
+  var result = await Clinica.createUserReceptioner(email, pass, partener_id, nume);
+
+  btn.disabled = false; btn.textContent = "Creează cont";
+
+  if (result.error) {
+    var err = document.getElementById("recModalError");
+    err.textContent = "Eroare: " + (result.error.message || "necunoscută");
+    err.classList.add("show");
+    return;
+  }
+
+  alert("✓ Cont recepționer creat cu succes!\n\nEmail: " + email + "\nParolă: (cea pe care ai setat-o)\n\nComunică credentialele direct utilizatorului.");
+  document.getElementById("recModalBg").classList.remove("show");
+  await loadReceptioneriTab();
+});
+
+document.getElementById("reloadRecBtn").addEventListener("click", loadReceptioneriTab);
+
+// Click outside modal pentru a închide
+document.getElementById("partModalBg").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
+});
+document.getElementById("adminPartModalBg").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
+});
+document.getElementById("recModalBg").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
 });
 </script>
 </body>
