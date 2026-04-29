@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recepție · Clinica Central</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f1117; --paper: #f8f6f1; --cream: #ede9e0;
+  --accent: #c8392b; --gold: #b8973a; --green: #1a6b3c;
+  --blue: #2c5282;
+  --radius: 2px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Topbar minimal */
+.topbar {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid var(--blue);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.topbar .brand { font-family: 'DM Serif Display', serif; font-size: 18px; }
+.topbar .brand em { color: var(--blue); font-style: italic; }
+.topbar .info { font-size: 11px; color: rgba(248,246,241,0.7); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; }
+.topbar .logout-btn {
+  background: rgba(248,246,241,0.08);
+  border: 1px solid rgba(248,246,241,0.15);
+  color: rgba(248,246,241,0.85);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.wrap { max-width: 600px; margin: 0 auto; padding: 32px 20px 60px; }
+
+/* HERO Card cu acțiunea principală */
+.hero {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 36px 30px;
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(44,82,130,0.25), transparent 60%);
+  pointer-events: none;
+}
+.hero .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(248,246,241,0.6);
+  margin-bottom: 14px;
+  position: relative;
+}
+.hero h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(30px, 6vw, 42px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  position: relative;
+}
+.hero h1 em { color: var(--blue); font-style: italic; }
+.hero p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(248,246,241,0.78);
+  position: relative;
+}
+
+/* Step instructions */
+.steps {
+  background: white;
+  border: 1px solid rgba(15,17,23,0.12);
+  border-radius: var(--radius);
+  padding: 24px 24px;
+  margin-bottom: 22px;
+}
+.step {
+  display: flex;
+  gap: 14px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(15,17,23,0.08);
+}
+.step:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: none; }
+.step-num {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  font-style: italic;
+}
+.step-content h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+.step-content p {
+  font-size: 13px;
+  color: rgba(15,17,23,0.65);
+  line-height: 1.5;
+}
+
+/* Form input cod card */
+.input-card {
+  background: white;
+  border: 1px solid rgba(15,17,23,0.12);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.input-card label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(15,17,23,0.65);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.input-card .cod-input {
+  width: 100%;
+  padding: 16px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+  border: 2px solid rgba(15,17,23,0.15);
+  border-radius: var(--radius);
+  background: var(--paper);
+  outline: none;
+  margin-bottom: 14px;
+}
+.input-card .cod-input:focus {
+  border-color: var(--blue);
+  background: white;
+}
+.input-card .cod-input::placeholder {
+  color: rgba(15,17,23,0.3);
+  letter-spacing: 0.1em;
+}
+.input-card .submit-btn {
+  width: 100%;
+  padding: 18px;
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.input-card .submit-btn:hover { background: var(--ink); }
+
+.hint {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: rgba(15,17,23,0.55);
+  line-height: 1.55;
+  padding: 0 12px;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .wrap { padding: 18px 14px 50px; }
+  .hero { padding: 26px 22px; }
+  .steps { padding: 20px 18px; }
+  .input-card { padding: 20px 18px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Clinica <em>Central</em></div>
+  <div style="display:flex; align-items:center; gap:12px;">
+    <span class="info" id="parteneInfo">—</span>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <div class="hero">
+    <div class="label">Punct de recepție</div>
+    <h1>Înregistrare <em>tranzacție</em></h1>
+    <p>Scanează cardul pacientului sau introdu codul manual mai jos pentru a continua la pagina de înregistrare.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Pacientul prezintă cardul</h3>
+        <p>Cere pacientului cardul de fidelitate fizic.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Scanezi codul QR</h3>
+        <p>Folosește camera telefonului sau introdu codul manual.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Completezi suma</h3>
+        <p>Sistemul calculează automat discount-ul aplicat pacientului.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-card">
+    <label>Cod card pacient</label>
+    <input type="text" class="cod-input" id="codInput" placeholder="CC-XXXX-XXXX" autocomplete="off" autocapitalize="characters">
+    <button class="submit-btn" id="submitBtn">Continuă →</button>
+  </div>
+
+  <p class="hint">
+    📱 Sau scanează direct QR-ul cu camera telefonului — vei fi redirectat automat aici dacă nu ești logat.
+  </p>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared/config.js"></script>
+<script src="shared/supabase-client.js"></script>
+<script>
+var receptioneProfile = null;
+
+(async function init() {
+  receptioneProfile = await Clinica.requireReceptioner();
+  if (!receptioneProfile) return;
+
+  var pa = receptioneProfile.parteneri || {};
+  document.getElementById("parteneInfo").textContent =
+    "📍 " + (pa.denumire || "Partener") + (pa.oras ? " · " + pa.oras : "");
+
+  document.getElementById("codInput").focus();
+
+  document.getElementById("logoutBtn").addEventListener("click", async function() {
+    await Clinica.signOut();
+    window.location.href = "index.html";
+  });
+})();
+
+function goToCard() {
+  var code = document.getElementById("codInput").value.trim().toUpperCase();
+  if (!code) {
+    alert("Introdu codul cardului (gen CC-XXXX-XXXX).");
+    document.getElementById("codInput").focus();
+    return;
+  }
+  // Acceptă atât CC-XXXX-XXXX cât și fără prefix
+  if (!code.startsWith("CC-")) {
+    code = "CC-" + code;
+  }
+  window.location.href = "card.html?id=" + encodeURIComponent(code);
+}
+
+document.getElementById("submitBtn").addEventListener("click", goToCard);
+document.getElementById("codInput").addEventListener("keypress", function(ev) {
+  if (ev.key === "Enter") {
+    ev.preventDefault();
+    goToCard();
+  }
+});
+</script>
+</body>
+</html>
