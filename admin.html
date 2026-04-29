@@ -293,6 +293,30 @@ tbody tr:hover { background: var(--cream); }
   flex: 1;
 }
 
+.qr-url-info {
+  background: rgba(15,17,23,0.04);
+  border: 1px solid rgba(15,17,23,0.08);
+  border-radius: 2px;
+  padding: 14px 16px;
+  margin-top: 16px;
+}
+.qr-url-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(15,17,23,0.6);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.qr-url-hint {
+  font-size: 11px;
+  color: rgba(15,17,23,0.65);
+  margin: 10px 0 0 0;
+  line-height: 1.5;
+}
+.qr-url-hint strong { color: var(--accent); }
+
 .banner-error {
   background: rgba(200, 57, 43, 0.1);
   border: 1px solid var(--accent);
@@ -653,35 +677,8 @@ tbody tr:hover { background: var(--cream); }
     <h2>Card <em>generat</em></h2>
     <p class="help" id="qrHelp">—</p>
 
-    <!-- ─── SECȚIUNEA 1: URL pentru qr.io ─── -->
+    <!-- QR generat local -->
     <div class="qr-section">
-      <div class="qr-section-head">
-        <span class="qr-num">01</span>
-        <div>
-          <strong>URL pentru qr.io</strong>
-          <span>Pentru QR personalizat cu logo & culori</span>
-        </div>
-      </div>
-      <div class="qr-url-box">
-        <code id="qrUrl">—</code>
-        <button type="button" class="qr-copy-btn" id="qrCopyBtn" title="Copiază URL">
-          📋 Copiază
-        </button>
-      </div>
-      <a href="https://qr.io" target="_blank" rel="noopener" class="qr-external-link">
-        Deschide qr.io în tab nou →
-      </a>
-    </div>
-
-    <!-- ─── SECȚIUNEA 2: QR generat local ─── -->
-    <div class="qr-section">
-      <div class="qr-section-head">
-        <span class="qr-num">02</span>
-        <div>
-          <strong>QR generat instant</strong>
-          <span>Pentru tipărire rapidă, fără personalizare</span>
-        </div>
-      </div>
       <div class="qr-display">
         <canvas id="qrCanvas"></canvas>
       </div>
@@ -689,6 +686,21 @@ tbody tr:hover { background: var(--cream); }
         <button type="button" class="btn btn-ghost" id="qrDownloadBtn">⬇ Descarcă PNG</button>
         <button type="button" class="btn btn-ghost" id="qrPrintBtn">🖨 Tipărește</button>
       </div>
+    </div>
+
+    <!-- URL info (pentru copiere manuală sau partajare) -->
+    <div class="qr-url-info">
+      <div class="qr-url-label">URL card (link direct)</div>
+      <div class="qr-url-box">
+        <code id="qrUrl">—</code>
+        <button type="button" class="qr-copy-btn" id="qrCopyBtn" title="Copiază URL">
+          📋 Copiază
+        </button>
+      </div>
+      <p class="qr-url-hint">
+        ℹ️ <strong>Important:</strong> NU folosi qr.io sau alte servicii care fac redirect prin domeniul lor — vor strica scanarea.
+        QR-ul de mai sus conține URL-ul direct și funcționează 100%.
+      </p>
     </div>
 
     <div class="modal-actions" style="border-top:1px solid rgba(15,17,23,0.1);padding-top:16px;margin-top:20px">
@@ -1024,7 +1036,12 @@ async function togglePacientActiv(p, activ) {
 }
 
 function buildCardURL(codCard) {
-  return window.location.origin + window.location.pathname.replace(/admin\.html$/, "card.html") + "?id=" + codCard;
+  // Pe Cloudflare Pages, URL-ul poate fi /admin sau /admin.html
+  // Construim întotdeauna o referință absolută la card.html
+  var origin = window.location.origin;
+  // Eliminăm orice pagină din path (admin, admin.html, dashboard, etc.)
+  var path = window.location.pathname.replace(/[^/]*$/, "");
+  return origin + path + "card.html?id=" + codCard;
 }
 
 // Search + filter active/inactive
