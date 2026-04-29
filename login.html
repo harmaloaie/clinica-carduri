@@ -340,17 +340,25 @@ function showSuccess(html) {
 // Auto-redirect dacă deja logat
 (async function() {
   var type = await Clinica.getUserType();
+  var next = params.get("next") || "";
+
+  // Caz special: când next=card.html (scan QR), DOAR receptioner sau partener pot continua
+  // Admin/pacient trebuie să se logheze ca receptioner — nu îi redirectăm la dashboard
+  var isCardScan = next.indexOf("card.html") >= 0;
+  if (isCardScan && (type === "admin" || type === "pacient")) {
+    // Force logout - nu mai e nimic auto să facă
+    await Clinica.signOut();
+    // Permite forma de login să apară (nu redirect)
+    return;
+  }
+
   if (type === "admin") {
-    var next = params.get("next");
     window.location.href = next || "dashboard.html";
   } else if (type === "partener") {
-    var next = params.get("next");
     window.location.href = next || "partener.html";
   } else if (type === "receptioner") {
-    var next = params.get("next");
     window.location.href = next || "receptie.html";
   } else if (type === "pacient") {
-    var next = params.get("next");
     window.location.href = next || "pacient.html";
   }
 })();
