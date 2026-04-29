@@ -129,21 +129,68 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   position: relative;
   margin-bottom: 16px;
 }
-.welcome .scan-info {
+.welcome .manual-code-box {
   background: rgba(248,246,241,0.08);
-  padding: 14px 16px;
+  padding: 18px 20px;
   border-radius: var(--radius);
   position: relative;
-  font-size: 13px;
-  color: rgba(248,246,241,0.85);
+  margin-top: 18px;
 }
-.welcome .scan-info code {
+.welcome .manual-code-box label {
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(248,246,241,0.12);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
-  color: var(--gold);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(248,246,241,0.7);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 10px;
+}
+.welcome .code-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.welcome .code-input-row input {
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 16px;
+  border: 1.5px solid rgba(248,246,241,0.2);
+  border-radius: var(--radius);
+  background: rgba(15,17,23,0.4);
+  color: var(--paper);
+  outline: none;
+  letter-spacing: 0.05em;
+}
+.welcome .code-input-row input::placeholder {
+  color: rgba(248,246,241,0.3);
+}
+.welcome .code-input-row input:focus {
+  border-color: var(--gold);
+  background: rgba(15,17,23,0.6);
+}
+.welcome .code-input-row button {
+  padding: 12px 22px;
+  background: var(--gold);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.welcome .code-input-row button:hover {
+  background: white;
+}
+.welcome .manual-code-box .hint {
+  font-size: 12px;
+  color: rgba(248,246,241,0.55);
+  margin: 0;
+  line-height: 1.4;
 }
 
 /* KPIs */
@@ -286,9 +333,15 @@ tbody tr:hover { background: var(--cream); }
 
   <div class="welcome">
     <h2>Bun venit, <em id="welcomePartener">Partener</em></h2>
-    <p>Aici vezi toate tranzacțiile înregistrate la unitatea ta. Pentru a înregistra o tranzacție nouă, scanează QR-ul de pe cardul pacientului.</p>
-    <div class="scan-info">
-      📱 <strong>Cum scanezi:</strong> deschide camera telefonului și apropie de QR-ul de pe card. Linkul te duce direct la pagina cardului în formatul <code>card.html?id=CC-XXXX</code>.
+    <p>Pentru a înregistra o tranzacție, scanează QR-ul de pe cardul pacientului SAU introdu codul manual mai jos.</p>
+
+    <div class="manual-code-box">
+      <label>Cod card pacient</label>
+      <div class="code-input-row">
+        <input type="text" id="manualCode" placeholder="CC-XXXX-XXXX" autocomplete="off" autocapitalize="characters" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase">
+        <button type="button" id="goToCardBtn">Continuă →</button>
+      </div>
+      <p class="hint">📱 Sau scanează direct QR-ul cu camera telefonului — vei fi adus aici dacă nu ești logat.</p>
     </div>
   </div>
 
@@ -418,6 +471,27 @@ async function loadTranzactii() {
 });
 
 document.getElementById("reloadBtn").addEventListener("click", loadTranzactii);
+
+// Manual code → go to card.html
+function goToCard() {
+  var code = document.getElementById("manualCode").value.trim().toUpperCase();
+  if (!code) {
+    alert("Introdu codul cardului (gen CC-XXXX-XXXX).");
+    return;
+  }
+  // Acceptă atât CC-XXXX-XXXX cât și fără prefix
+  if (!code.startsWith("CC-")) {
+    code = "CC-" + code;
+  }
+  window.location.href = "card.html?id=" + encodeURIComponent(code);
+}
+document.getElementById("goToCardBtn").addEventListener("click", goToCard);
+document.getElementById("manualCode").addEventListener("keypress", function(ev) {
+  if (ev.key === "Enter") {
+    ev.preventDefault();
+    goToCard();
+  }
+});
 
 // Export CSV
 document.getElementById("exportBtn").addEventListener("click", function() {
