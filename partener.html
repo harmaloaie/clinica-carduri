@@ -221,7 +221,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   line-height: 1;
 }
 .kpi .val.green { color: var(--green); }
-.kpi .val em { font-style: italic; color: var(--gold); }
+.kpi .val.gold { color: var(--gold); }
+.kpi .val em { font-style: italic; color: var(--accent); }
 
 /* Filters */
 .filter-row {
@@ -472,16 +473,10 @@ tbody tr:hover { background: var(--cream); }
 
   <div class="welcome">
     <h2>Bun venit, <em id="welcomePartener">Partener</em></h2>
-    <p>Pentru a înregistra o tranzacție, scanează QR-ul de pe cardul pacientului SAU introdu codul manual mai jos.</p>
-
-    <div class="manual-code-box">
-      <label>Cod card pacient</label>
-      <div class="code-input-row">
-        <input type="text" id="manualCode" placeholder="CC-XXXX-XXXX" autocomplete="off" autocapitalize="characters" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase">
-        <button type="button" id="goToCardBtn">Continuă →</button>
-      </div>
-      <p class="hint">📱 Sau scanează direct QR-ul cu camera telefonului — vei fi adus aici dacă nu ești logat.</p>
-    </div>
+    <p>Aici vezi performanța clinicii tale: tranzacții înregistrate, sume totale, comisioane și discount-uri oferite pacienților.</p>
+    <p style="margin-top:10px;font-size:12px;color:rgba(248,246,241,0.55);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em">
+      📱 Recepționera de la unitatea ta înregistrează tranzacțiile separat, pe contul ei.
+    </p>
   </div>
 
   <div class="section-head">
@@ -495,8 +490,11 @@ tbody tr:hover { background: var(--cream); }
   <!-- KPIs -->
   <div class="kpis">
     <div class="kpi"><div class="lbl">Tranzacții</div><div class="val" id="kTxCount">—</div></div>
-    <div class="kpi"><div class="lbl">Total încasat</div><div class="val" id="kTotalPlatit">—</div></div>
-    <div class="kpi"><div class="lbl">Discount aplicat</div><div class="val green" id="kTotalEconomie">—</div></div>
+    <div class="kpi"><div class="lbl">Sumă fără discount</div><div class="val" id="kTotalLista">—</div></div>
+    <div class="kpi"><div class="lbl">Sumă încasată</div><div class="val green" id="kTotalPlatit">—</div></div>
+    <div class="kpi"><div class="lbl">Comision (10%)</div><div class="val gold" id="kComisionTotal">—</div></div>
+    <div class="kpi"><div class="lbl">Discount oferit pacienți</div><div class="val" id="kTotalEconomie">—</div></div>
+    <div class="kpi"><div class="lbl">Profit net (10% − disc.)</div><div class="val"><em id="kProfitNet">—</em></div></div>
   </div>
 
   <!-- Filters -->
@@ -568,16 +566,35 @@ async function loadTranzactii() {
 
   allTx = data || [];
 
-  // KPIs
-  var totalPlatit = 0, totalEcon = 0;
+  // KPIs — calcul complet (ca la admin general)
+  var COMISION_PCT = 10; // 10% fix pentru toți partenerii
+  var totalLista = 0;
+  var totalPlatit = 0;
+  var totalEcon = 0;
+  var totalComision = 0;
+  var totalProfit = 0;
+
   allTx.forEach(function(t) {
     if (t.status === "anulat") return;
-    totalPlatit += parseFloat(t.pret_platit) || 0;
-    totalEcon += parseFloat(t.economie) || 0;
+    var lista = parseFloat(t.pret_lista) || 0;
+    var platit = parseFloat(t.pret_platit) || 0;
+    var econ = lista - platit;
+    var comisionTotal = lista * COMISION_PCT / 100;
+    var profit = Math.max(comisionTotal - econ, 0);
+
+    totalLista += lista;
+    totalPlatit += platit;
+    totalEcon += econ;
+    totalComision += comisionTotal;
+    totalProfit += profit;
   });
+
   document.getElementById("kTxCount").textContent = allTx.length;
+  document.getElementById("kTotalLista").textContent = Clinica.formatRON(totalLista);
   document.getElementById("kTotalPlatit").textContent = Clinica.formatRON(totalPlatit);
+  document.getElementById("kComisionTotal").textContent = Clinica.formatRON(totalComision);
   document.getElementById("kTotalEconomie").textContent = Clinica.formatRON(totalEcon);
+  document.getElementById("kProfitNet").textContent = Clinica.formatRON(totalProfit);
 
   // Table
   var tbody = document.getElementById("txTbody");
@@ -611,27 +628,6 @@ async function loadTranzactii() {
 });
 
 document.getElementById("reloadBtn").addEventListener("click", loadTranzactii);
-
-// Manual code → go to card.html
-function goToCard() {
-  var code = document.getElementById("manualCode").value.trim().toUpperCase();
-  if (!code) {
-    alert("Introdu codul cardului (gen CC-XXXX-XXXX).");
-    return;
-  }
-  // Acceptă atât CC-XXXX-XXXX cât și fără prefix
-  if (!code.startsWith("CC-")) {
-    code = "CC-" + code;
-  }
-  window.location.href = "card.html?id=" + encodeURIComponent(code);
-}
-document.getElementById("goToCardBtn").addEventListener("click", goToCard);
-document.getElementById("manualCode").addEventListener("keypress", function(ev) {
-  if (ev.key === "Enter") {
-    ev.preventDefault();
-    goToCard();
-  }
-});
 
 // Export CSV
 document.getElementById("exportBtn").addEventListener("click", function() {
