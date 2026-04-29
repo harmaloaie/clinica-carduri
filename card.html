@@ -439,7 +439,7 @@ body {
       <p>Datele au fost salvate cu succes.</p>
       <div class="ref" id="successRef">—</div>
       <div class="actions">
-        <button class="btn-link" onclick="window.location.href='partener.html'">Vezi tranzacții</button>
+        <button class="btn-link" id="afterSuccessBtn">Înregistrează tranzacție nouă</button>
       </div>
     </div>
 
@@ -495,11 +495,43 @@ body {
 <script>
 var pacient = null;
 var partenerProfile = null;
+var userType = null; // 'partener' sau 'receptioner'
 
 (async function init() {
-  // Necesită login partener
-  partenerProfile = await Clinica.requirePartener();
-  if (!partenerProfile) return;
+  // Detectează ce tip de user e logat
+  userType = await Clinica.getUserType();
+
+  // card.html acceptă: receptioner (recomandat) și partener (admin partener)
+  // Admin general și pacient → redirecționăm la pagina lor
+  if (userType === "admin") {
+    window.location.href = "dashboard.html";
+    return;
+  }
+  if (userType === "pacient") {
+    window.location.href = "pacient.html";
+    return;
+  }
+
+  // Dacă nu e logat, redirect la receptioner login (default pentru flow QR scan)
+  if (!userType) {
+    var current = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = "login.html?type=receptioner&next=" + current;
+    return;
+  }
+
+  // Pentru partener sau receptioner — încarcă profilul corespunzător
+  if (userType === "partener") {
+    partenerProfile = await Clinica.getPartenerProfile();
+  } else if (userType === "receptioner") {
+    partenerProfile = await Clinica.getReceptionerProfile();
+  }
+
+  if (!partenerProfile || !partenerProfile.activ) {
+    alert("Profil invalid. Te rog să te loghezi din nou.");
+    await Clinica.signOut();
+    window.location.href = "index.html";
+    return;
+  }
 
   // Update topbar
   document.getElementById("partenerName").textContent =
@@ -513,6 +545,15 @@ var partenerProfile = null;
   document.getElementById("logoutBtn").addEventListener("click", async function() {
     await Clinica.signOut();
     window.location.href = "index.html";
+  });
+
+  // After success button — receptioner→ receptie.html, partener → partener.html
+  document.getElementById("afterSuccessBtn").addEventListener("click", function() {
+    if (userType === "receptioner") {
+      window.location.href = "receptie.html";
+    } else {
+      window.location.href = "partener.html";
+    }
   });
 
   await loadCard();
