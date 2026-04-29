@@ -322,6 +322,88 @@ body {
   display: none;
 }
 .banner-error.show { display: block; }
+
+/* ═══════ MOBILE OPTIMIZATIONS ═══════ */
+@media (max-width: 768px) {
+  .topbar {
+    padding: 10px 14px;
+    font-size: 11px;
+  }
+  .topbar .partener-info { font-size: 10px; }
+
+  .wrap { padding: 18px 14px 50px; }
+
+  /* Card mare — adaptare */
+  .card {
+    padding: 24px 20px;
+    margin-bottom: 18px;
+  }
+  .card .name {
+    font-size: 28px;
+    margin-bottom: 18px;
+  }
+  .card .discount-pct { font-size: 44px; }
+  .card .discount-row { padding-top: 16px; }
+  .card .discount-label { font-size: 13px; }
+  .card .cod {
+    position: static;
+    margin-top: 16px;
+    font-size: 11px;
+    text-align: right;
+  }
+
+  /* Form section */
+  .form-section { padding: 22px 18px; }
+  .form-section h3 { font-size: 20px; }
+  .form-section .help { font-size: 12px; }
+
+  .partener-tag { padding: 12px 14px; }
+  .partener-tag strong { font-size: 16px; }
+
+  /* Inputs — anti-zoom iOS și touch-friendly */
+  .field input, .field textarea {
+    font-size: 16px !important;  /* Critical: prevents iOS zoom */
+    padding: 14px 14px;
+  }
+  .field input[type="number"] {
+    font-size: 18px !important;
+  }
+  .field label { font-size: 11px; }
+
+  /* Calc grid - 1 column mobile */
+  .calc-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .calc-box {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+  }
+  .calc-box .lbl { margin-bottom: 0; }
+  .calc-box .val { font-size: 22px; }
+
+  /* Submit button - mai mare pentru touch */
+  .btn {
+    padding: 18px;
+    font-size: 15px;
+    border-radius: 4px;
+  }
+
+  /* Success state */
+  .success-card {
+    padding: 28px 20px;
+  }
+  .success-card .check { font-size: 40px; }
+  .success-card h3 { font-size: 24px; }
+}
+
+@media (max-width: 380px) {
+  .card .name { font-size: 24px; }
+  .card .discount-pct { font-size: 38px; }
+}
 </style>
 </head>
 <body>
