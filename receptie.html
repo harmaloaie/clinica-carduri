@@ -192,6 +192,67 @@ body {
 }
 .input-card .submit-btn:hover { background: var(--ink); }
 
+/* Scan button — primary action */
+.scan-btn {
+  width: 100%;
+  padding: 22px;
+  background: var(--ink);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  transition: all 0.15s;
+}
+.scan-btn:hover { background: var(--blue); }
+.scan-btn:active { transform: scale(0.98); }
+
+.btn-cancel {
+  flex: 1;
+  padding: 12px;
+  background: rgba(15,17,23,0.06);
+  color: var(--ink);
+  border: 1px solid rgba(15,17,23,0.15);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.btn-cancel:hover { background: rgba(15,17,23,0.1); }
+
+/* Separator OR */
+.separator {
+  display: flex;
+  align-items: center;
+  margin: 22px 0 18px;
+  gap: 14px;
+}
+.separator::before, .separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(15,17,23,0.12);
+}
+.separator span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: rgba(15,17,23,0.5);
+  font-weight: 600;
+}
+
 .hint {
   text-align: center;
   margin-top: 20px;
@@ -253,22 +314,48 @@ body {
   </div>
 
   <div class="input-card">
+    <button class="scan-btn" id="scanBtn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+        <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+        <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+        <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+        <rect x="7" y="7" width="10" height="10" rx="1"/>
+      </svg>
+      Scanează card
+    </button>
+
+    <div id="scannerWrap" style="display:none">
+      <div id="qrReader" style="width:100%;border-radius:2px;overflow:hidden"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn-cancel" id="cancelScanBtn">Anulează scanare</button>
+      </div>
+      <p style="margin-top:10px;font-size:12px;color:rgba(15,17,23,0.6);text-align:center">
+        Apropie camera de codul QR — citirea e automată.
+      </p>
+    </div>
+
+    <div class="separator"><span>SAU INTRODU MANUAL</span></div>
+
     <label>Cod card pacient</label>
     <input type="text" class="cod-input" id="codInput" placeholder="CC-XXXX-XXXX" autocomplete="off" autocapitalize="characters">
     <button class="submit-btn" id="submitBtn">Continuă →</button>
   </div>
 
   <p class="hint">
-    📱 Sau scanează direct QR-ul cu camera telefonului — vei fi redirectat automat aici dacă nu ești logat.
+    💡 Recomandat: folosește butonul <strong>Scanează card</strong> de mai sus — păstrează sesiunea logată.<br>
+    Dacă scanezi cu camera nativă a telefonului, vei fi delogat și va trebui să te logezi din nou.
   </p>
 
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="shared/config.js"></script>
 <script src="shared/supabase-client.js"></script>
 <script>
 var receptioneProfile = null;
+var qrScanner = null;
 
 (async function init() {
   receptioneProfile = await Clinica.requireReceptioner();
@@ -278,34 +365,99 @@ var receptioneProfile = null;
   document.getElementById("parteneInfo").textContent =
     "📍 " + (pa.denumire || "Partener") + (pa.oras ? " · " + pa.oras : "");
 
-  document.getElementById("codInput").focus();
-
   document.getElementById("logoutBtn").addEventListener("click", async function() {
+    if (qrScanner) { try { await qrScanner.stop(); } catch(e){} }
     await Clinica.signOut();
     window.location.href = "index.html";
   });
 })();
 
-function goToCard() {
-  var code = document.getElementById("codInput").value.trim().toUpperCase();
+// Manual code submission
+function goToCard(code) {
   if (!code) {
-    alert("Introdu codul cardului (gen CC-XXXX-XXXX).");
+    code = document.getElementById("codInput").value.trim().toUpperCase();
+  }
+  if (!code) {
+    alert("Introdu codul cardului (gen CC-XXXX-XXXX) sau scanează QR.");
     document.getElementById("codInput").focus();
     return;
   }
-  // Acceptă atât CC-XXXX-XXXX cât și fără prefix
+
+  // Extract code from URL if QR contains full URL (ex: https://carduri.clinicacentral.ro/card.html?id=CC-XXX)
+  if (code.indexOf("?id=") >= 0) {
+    var match = code.match(/[?&]id=([^&]+)/);
+    if (match) code = decodeURIComponent(match[1]);
+  }
+  if (code.indexOf("/card.html") >= 0 && code.indexOf("?id=") < 0) {
+    // No id in URL — error
+    alert("QR-ul nu conține un cod valid.");
+    return;
+  }
+
+  code = code.toUpperCase().trim();
   if (!code.startsWith("CC-")) {
     code = "CC-" + code;
   }
   window.location.href = "card.html?id=" + encodeURIComponent(code);
 }
 
-document.getElementById("submitBtn").addEventListener("click", goToCard);
+document.getElementById("submitBtn").addEventListener("click", function() { goToCard(); });
 document.getElementById("codInput").addEventListener("keypress", function(ev) {
   if (ev.key === "Enter") {
     ev.preventDefault();
     goToCard();
   }
+});
+
+// QR Scanner
+document.getElementById("scanBtn").addEventListener("click", async function() {
+  var scanBtn = document.getElementById("scanBtn");
+  var scannerWrap = document.getElementById("scannerWrap");
+
+  scanBtn.style.display = "none";
+  scannerWrap.style.display = "block";
+
+  try {
+    qrScanner = new Html5Qrcode("qrReader");
+    var config = {
+      fps: 10,
+      qrbox: function(viewfinderWidth, viewfinderHeight) {
+        var minEdgePercentage = 0.7;
+        var minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+        var qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+        return { width: qrboxSize, height: qrboxSize };
+      },
+      aspectRatio: 1.0
+    };
+
+    await qrScanner.start(
+      { facingMode: "environment" }, // camera spate
+      config,
+      function(decodedText, decodedResult) {
+        // QR detected!
+        if (qrScanner) {
+          qrScanner.stop().catch(function(e){});
+        }
+        goToCard(decodedText);
+      },
+      function(errorMessage) {
+        // Errors silent (frame-by-frame failed scans, normal)
+      }
+    );
+  } catch (err) {
+    alert("Nu s-a putut deschide camera: " + (err.message || err));
+    scanBtn.style.display = "flex";
+    scannerWrap.style.display = "none";
+  }
+});
+
+document.getElementById("cancelScanBtn").addEventListener("click", async function() {
+  if (qrScanner) {
+    try { await qrScanner.stop(); } catch(e){}
+    qrScanner = null;
+  }
+  document.getElementById("scannerWrap").style.display = "none";
+  document.getElementById("scanBtn").style.display = "flex";
 });
 </script>
 </body>
