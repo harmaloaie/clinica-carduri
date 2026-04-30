@@ -257,12 +257,12 @@ body {
   <form id="otpStep2Form" autocomplete="off" style="display:none">
     <div class="info-magic" style="background: rgba(26,107,60,0.08); border-color: var(--green)">
       <strong>Cod trimis ✓</strong>
-      Verifică emailul <code id="emailDisplay" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)">—</code> și introdu codul de 6 cifre primit.
+      Verifică emailul <code id="emailDisplay" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)">—</code> și introdu codul de 8 cifre primit.
     </div>
 
     <div class="field">
-      <label>Cod de verificare (6 cifre)</label>
-      <input type="text" id="codOtp" required pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" inputmode="numeric" placeholder="123456" style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.3em">
+      <label>Cod de verificare (8 cifre)</label>
+      <input type="text" id="codOtp" required pattern="[0-9]{8}" maxlength="8" autocomplete="one-time-code" inputmode="numeric" placeholder="12345678" style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.2em">
     </div>
     <button type="submit" class="btn" id="submitOtpStep2Btn">Verifică & autentifică →</button>
 
@@ -481,8 +481,8 @@ document.getElementById("otpStep2Form").addEventListener("submit", async functio
 
   var token = document.getElementById("codOtp").value.trim();
 
-  if (!/^\d{6}$/.test(token)) {
-    showError("Codul trebuie să aibă exact 6 cifre.");
+  if (!/^\d{8}$/.test(token)) {
+    showError("Codul trebuie să aibă exact 8 cifre.");
     btn.disabled = false;
     btn.textContent = "Verifică & autentifică →";
     return;
@@ -543,11 +543,10 @@ document.getElementById("otpResendBtn").addEventListener("click", async function
   }
 });
 
-// Auto-submit când utilizatorul tastează 6 cifre
+// Auto-submit când utilizatorul tastează 8 cifre
 document.getElementById("codOtp").addEventListener("input", function(ev) {
-  // Permite doar cifre
   this.value = this.value.replace(/[^0-9]/g, "");
-  if (this.value.length === 6) {
+  if (this.value.length === 8) {
     document.getElementById("otpStep2Form").requestSubmit();
   }
 });
