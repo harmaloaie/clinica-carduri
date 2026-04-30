@@ -72,7 +72,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   background: var(--ink);
   color: var(--paper);
   border-radius: var(--radius);
-  padding: 36px 32px;
+  padding: 28px 28px;
   margin-bottom: 28px;
   position: relative;
   overflow: hidden;
@@ -90,57 +90,86 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(248,246,241,0.5);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  position: relative;
 }
 .card-hero .name {
   font-family: 'DM Serif Display', serif;
-  font-size: clamp(36px, 5vw, 48px);
+  font-size: clamp(28px, 5vw, 40px);
   letter-spacing: -0.02em;
   line-height: 1.05;
-  margin-bottom: 28px;
+  margin-bottom: 22px;
   position: relative;
 }
-.card-hero .discount-row {
+.card-hero .row-bottom {
   display: flex;
-  align-items: baseline;
-  gap: 14px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
   position: relative;
-  padding-top: 22px;
-  border-top: 1px solid rgba(248,246,241,0.15);
 }
+.card-hero .info-block { flex: 1; min-width: 0; }
 .card-hero .discount-pct {
   font-family: 'DM Serif Display', serif;
-  font-size: clamp(56px, 8vw, 72px);
+  font-size: clamp(40px, 7vw, 52px);
   font-style: italic;
   color: var(--gold);
   line-height: 1;
-}
-.card-hero .discount-label { font-size: 14px; color: rgba(248,246,241,0.7); }
-.card-hero .discount-label strong { display: block; color: var(--paper); font-weight: 600; }
-.card-hero .nivel-tag {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 3px 10px;
-  border-radius: 99px;
-  background: rgba(248,246,241,0.1);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  color: var(--gold);
-  font-weight: 700;
+  margin-bottom: 10px;
 }
 .card-hero .cod {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
+  font-size: 11px;
   letter-spacing: 0.1em;
-  color: rgba(248,246,241,0.5);
-  position: absolute;
-  bottom: 32px;
-  right: 32px;
+  color: rgba(248,246,241,0.6);
+  margin-bottom: 4px;
 }
-@media (max-width: 600px) {
-  .card-hero { padding: 28px 22px; }
-  .card-hero .cod { position: static; margin-top: 14px; }
+.card-hero .nivel-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(184,151,58,0.18);
+  border: 1px solid rgba(184,151,58,0.4);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.card-hero .qr-box {
+  flex-shrink: 0;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-hero .qr-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.card-hero .qr-hint {
+  position: absolute;
+  bottom: -22px;
+  right: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: rgba(248,246,241,0.4);
+  text-transform: uppercase;
+}
+
+@media (max-width: 480px) {
+  .card-hero { padding: 22px 20px; }
+  .card-hero .qr-box { width: 92px; height: 92px; padding: 6px; }
+  .card-hero .name { font-size: 24px; margin-bottom: 16px; }
+  .card-hero .discount-pct { font-size: 38px; margin-bottom: 8px; }
+  .card-hero .row-bottom { gap: 12px; }
 }
 
 /* KPIs */
@@ -460,13 +489,16 @@ tbody tr:last-child td { border-bottom: none; }
   <div class="card-hero">
     <div class="label">Cardul tău</div>
     <div class="name" id="cardName">—</div>
-    <div class="discount-row">
-      <span class="discount-pct" id="cardDiscount">—</span>
-      <span class="discount-label">
-        discount<strong>la toți partenerii noștri<span class="nivel-tag" id="cardNivel">—</span></strong>
-      </span>
+    <div class="row-bottom">
+      <div class="info-block">
+        <div class="discount-pct" id="cardDiscount">—</div>
+        <div class="cod" id="cardCod">—</div>
+        <span class="nivel-tag" id="cardNivel">—</span>
+      </div>
+      <div class="qr-box">
+        <canvas id="cardQR" width="120" height="120"></canvas>
+      </div>
     </div>
-    <div class="cod" id="cardCod">—</div>
   </div>
 
   <!-- KPIs -->
@@ -546,6 +578,7 @@ tbody tr:last-child td { border-bottom: none; }
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared/qrcode-lib.js"></script>
 <script src="shared/config.js"></script>
 <script src="shared/supabase-client.js"></script>
 <script>
@@ -572,6 +605,9 @@ var allTx = [];
     document.getElementById("cardNivel").style.display = "none";
   }
 
+  // Generează QR pentru card (folosind librăria locală qrcode-generator)
+  generateCardQR(pacientProfile.cod_card);
+
   // Update profil tab
   document.getElementById("pNume").textContent =
     (pacientProfile.prenume || "") + " " + (pacientProfile.nume || "");
@@ -592,6 +628,56 @@ var allTx = [];
 
   await loadIstoric();
 })();
+
+// Generează QR pentru cardul pacientului — URL direct la card.html
+function generateCardQR(codCard) {
+  if (!codCard) return;
+  var canvas = document.getElementById("cardQR");
+  if (!canvas) return;
+
+  // Așteaptă ca librăria să fie încărcată
+  if (typeof qrcode === 'undefined') {
+    setTimeout(function() { generateCardQR(codCard); }, 200);
+    return;
+  }
+
+  try {
+    // URL pentru recepționer (direct la card.html cu ID)
+    var url = window.location.origin + "/card.html?id=" + encodeURIComponent(codCard);
+
+    var qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+
+    var moduleCount = qr.getModuleCount();
+    var size = 240; // High DPI render — afișarea CSS îl scalează
+    var margin = 2;
+    var totalModules = moduleCount + (margin * 2);
+    var moduleSize = size / totalModules;
+
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext('2d');
+
+    // Background alb
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+
+    // Module negre
+    ctx.fillStyle = '#000000';
+    for (var row = 0; row < moduleCount; row++) {
+      for (var col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          var x = (col + margin) * moduleSize;
+          var y = (row + margin) * moduleSize;
+          ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(moduleSize), Math.ceil(moduleSize));
+        }
+      }
+    }
+  } catch(e) {
+    console.error('Eroare generare QR:', e);
+  }
+}
 
 async function loadIstoric() {
   document.getElementById("loadingIstoric").style.display = "flex";
