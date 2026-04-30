@@ -693,16 +693,44 @@ document.querySelectorAll(".tab").forEach(function(t) {
 
 <!-- ═══════ PWA: Service Worker + Install Prompt ═══════ -->
 <script>
-// 1. Înregistrează service worker
+// 1. Înregistrează service worker cu auto-update
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('service-worker.js')
       .then(function(reg) {
-        console.log('[PWA] Service Worker înregistrat:', reg.scope);
+        console.log('[PWA] Service Worker înregistrat');
+
+        // Verifică update-uri imediat
+        reg.update();
+
+        // Verifică update-uri la fiecare 60 secunde
+        setInterval(function() { reg.update(); }, 60000);
+
+        // Detectează când un SW nou e găsit
+        reg.addEventListener('updatefound', function() {
+          var newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', function() {
+            if (newWorker.state === 'activated') {
+              console.log('[PWA] Versiune nouă activată, reîncarcă pagina');
+            }
+          });
+        });
       })
       .catch(function(err) {
         console.warn('[PWA] Service Worker eșuat:', err);
       });
+
+    // Asculţă mesaje de la SW (auto-refresh după update)
+    var hasReloaded = false;
+    navigator.serviceWorker.addEventListener('message', function(ev) {
+      if (ev.data && ev.data.type === 'SW_UPDATED' && !hasReloaded) {
+        hasReloaded = true;
+        console.log('[PWA] Reîncarcă pagina pentru versiunea nouă');
+        // Refresh silent — utilizatorul vede pagina re-încărcată cu cod nou
+        setTimeout(function() { window.location.reload(); }, 500);
+      }
+    });
   });
 }
 
