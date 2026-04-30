@@ -240,18 +240,35 @@ body {
     <button type="submit" class="btn" id="submitBtn">Intră în cont →</button>
   </form>
 
-  <!-- Form pentru pacient (magic link) -->
-  <form id="magicForm" autocomplete="on" style="display:none">
-    <div class="info-magic" id="magicInfo">
+  <!-- Form pentru pacient (OTP - cod 6 cifre) -->
+  <form id="otpStep1Form" autocomplete="on" style="display:none">
+    <div class="info-magic">
       <strong>Login fără parolă</strong>
-      Introdu email-ul cu care ești înregistrat. Vei primi un link pe email pentru a te conecta — fără să-ți amintești parola.
+      Introdu email-ul. Vei primi un cod de 6 cifre pe care îl tastezi mai jos.
     </div>
 
     <div class="field">
       <label>Email</label>
-      <input type="email" id="emailMagic" required autocomplete="email" autofocus>
+      <input type="email" id="emailOtp" required autocomplete="email" autofocus placeholder="email@example.ro">
     </div>
-    <button type="submit" class="btn" id="submitMagicBtn">Trimite link pe email →</button>
+    <button type="submit" class="btn" id="submitOtpStep1Btn">Trimite cod pe email →</button>
+  </form>
+
+  <form id="otpStep2Form" autocomplete="off" style="display:none">
+    <div class="info-magic" style="background: rgba(26,107,60,0.08); border-color: var(--green)">
+      <strong>Cod trimis ✓</strong>
+      Verifică emailul <code id="emailDisplay" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)">—</code> și introdu codul de 6 cifre primit.
+    </div>
+
+    <div class="field">
+      <label>Cod de verificare (6 cifre)</label>
+      <input type="text" id="codOtp" required pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" inputmode="numeric" placeholder="123456" style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:24px;letter-spacing:0.3em">
+    </div>
+    <button type="submit" class="btn" id="submitOtpStep2Btn">Verifică & autentifică →</button>
+
+    <div style="text-align:center;margin-top:14px">
+      <button type="button" id="otpResendBtn" style="background:none;border:none;color:rgba(15,17,23,0.55);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">↻ Trimite alt cod</button>
+    </div>
   </form>
 
   <div class="switch-links" id="switchLinks"></div>
@@ -292,7 +309,7 @@ if (nextParam.indexOf("card.html") >= 0 && loginType === "receptioner") {
 
 // Show appropriate form
 if (loginType === "pacient") {
-  document.getElementById("magicForm").style.display = "block";
+  document.getElementById("otpStep1Form").style.display = "block";
 } else {
   // admin, partener, receptioner — toate folosesc password
   document.getElementById("passwordForm").style.display = "block";
@@ -411,36 +428,128 @@ document.getElementById("passwordForm").addEventListener("submit", async functio
   }
 });
 
-// Magic link login (pacient)
-document.getElementById("magicForm").addEventListener("submit", async function(ev) {
+// OTP login pentru pacient — Pasul 1: trimite cod pe email
+var savedEmail = "";
+
+document.getElementById("otpStep1Form").addEventListener("submit", async function(ev) {
   ev.preventDefault();
-  var btn = document.getElementById("submitMagicBtn");
+  var btn = document.getElementById("submitOtpStep1Btn");
   btn.disabled = true;
   btn.textContent = "Se trimite...";
   document.getElementById("errorBox").classList.remove("show");
 
-  var email = document.getElementById("emailMagic").value.trim();
+  var email = document.getElementById("emailOtp").value.trim().toLowerCase();
+  savedEmail = email;
 
-  // Calculează URL-ul de redirect (pacient.html)
-  var redirectUrl = window.location.origin + window.location.pathname.replace(/[^/]+$/, "pacient.html");
+  // signInWithOtp cu shouldCreateUser=false (utilizator trebuie să existe deja)
+  // Trimite cod (nu link) — controlled de Email Template în Supabase
+  var { error } = await sb.auth.signInWithOtp({
+    email: email,
+    options: {
+      shouldCreateUser: false  // doar useri existenți (creați de admin)
+    }
+  });
 
-  var { error } = await Clinica.sendMagicLink(email, redirectUrl);
   if (error) {
-    showError("Eroare la trimitere: " + (error.message || "necunoscută"));
+    var msg = error.message || "necunoscută";
+    if (msg.toLowerCase().indexOf("not found") >= 0 || msg.toLowerCase().indexOf("not authorized") >= 0) {
+      showError("Adresa de email nu este înregistrată. Contactează clinica pentru a primi cardul.");
+    } else {
+      showError("Eroare la trimitere: " + msg);
+    }
     btn.disabled = false;
-    btn.textContent = "Trimite link pe email →";
+    btn.textContent = "Trimite cod pe email →";
     return;
   }
 
-  // Hide form, show success
-  document.getElementById("magicForm").style.display = "none";
-  document.getElementById("magicInfo")?.remove();
-  showSuccess(
-    '<strong>Verifică-ți email-ul ✓</strong>' +
-    'Ți-am trimis un link de autentificare la <strong>' + email.replace(/[<>&"']/g, "") + '</strong>. ' +
-    'Click pe link-ul din email pentru a te loga. ' +
-    '<br><br>Link-ul expiră în 1 oră. Verifică și folder-ul Spam.'
-  );
+  // Comută la pasul 2
+  document.getElementById("otpStep1Form").style.display = "none";
+  document.getElementById("otpStep2Form").style.display = "block";
+  document.getElementById("emailDisplay").textContent = email;
+  setTimeout(function() {
+    document.getElementById("codOtp").focus();
+  }, 100);
+});
+
+// OTP login — Pasul 2: verifică cod
+document.getElementById("otpStep2Form").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+  var btn = document.getElementById("submitOtpStep2Btn");
+  btn.disabled = true;
+  btn.textContent = "Se verifică...";
+  document.getElementById("errorBox").classList.remove("show");
+
+  var token = document.getElementById("codOtp").value.trim();
+
+  if (!/^\d{6}$/.test(token)) {
+    showError("Codul trebuie să aibă exact 6 cifre.");
+    btn.disabled = false;
+    btn.textContent = "Verifică & autentifică →";
+    return;
+  }
+
+  // verifyOtp cu type='email' pentru cod numeric
+  var { data, error } = await sb.auth.verifyOtp({
+    email: savedEmail,
+    token: token,
+    type: 'email'
+  });
+
+  if (error) {
+    showError("Cod invalid sau expirat. Verifică emailul sau cere alt cod.");
+    btn.disabled = false;
+    btn.textContent = "Verifică & autentifică →";
+    return;
+  }
+
+  // Verifică tipul utilizatorului
+  var actualType = await Clinica.getUserType();
+  if (actualType !== "pacient") {
+    showError("Această adresă nu are cont de pacient. Contactează administratorul.");
+    await Clinica.signOut();
+    btn.disabled = false;
+    btn.textContent = "Verifică & autentifică →";
+    return;
+  }
+
+  // Logged in! Redirect
+  var next = params.get("next");
+  window.location.href = next || "pacient.html";
+});
+
+// Resend code
+document.getElementById("otpResendBtn").addEventListener("click", async function() {
+  if (!savedEmail) return;
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = "Se retrimite...";
+  document.getElementById("errorBox").classList.remove("show");
+
+  var { error } = await sb.auth.signInWithOtp({
+    email: savedEmail,
+    options: { shouldCreateUser: false }
+  });
+
+  btn.disabled = false;
+  btn.textContent = "↻ Trimite alt cod";
+
+  if (error) {
+    showError("Eroare la retrimitere: " + (error.message || "necunoscută"));
+  } else {
+    showSuccess('<strong>Cod retrimis ✓</strong>Verifică din nou emailul.');
+    setTimeout(function() {
+      document.getElementById("successBox").classList.remove("show");
+    }, 4000);
+  }
+});
+
+// Auto-submit când utilizatorul tastează 6 cifre
+document.getElementById("codOtp").addEventListener("input", function(ev) {
+  // Permite doar cifre
+  this.value = this.value.replace(/[^0-9]/g, "");
+  if (this.value.length === 6) {
+    document.getElementById("otpStep2Form").requestSubmit();
+  }
 });
 </script>
 </body>
