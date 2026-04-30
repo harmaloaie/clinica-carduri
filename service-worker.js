@@ -1,135 +1,167 @@
+// ═══════════════════════════════════════════════════════════════
 // Service Worker pentru Clinica Central PWA
-// Versiunea cache-ului - INCREMENTEAZĂ când faci modificări la fișiere
-const CACHE_VERSION = 'cc-v1.0.0';
+//
+// STRATEGIE:
+// - HTML și JS/CSS: NETWORK-FIRST (cere mereu de pe server)
+//   evită cache prost, utilizatorul primește mereu update-uri
+// - Imagini, icons: CACHE-FIRST (rapid, nu se schimbă)
+// - Supabase API: NU se interceptează (vine direct de pe server)
+//
+// AUTO-UPDATE:
+// - Service Worker activează imediat versiunea nouă
+// - Notifică client-ul prin postMessage
+// ═══════════════════════════════════════════════════════════════
+
+const CACHE_VERSION = 'cc-v1.0.1'; // INCREMENTEAZĂ când faci modificări mari
 const CACHE_NAME = `clinica-central-${CACHE_VERSION}`;
 
-// Resurse esențiale pentru PWA (UI shell)
-// Datele dinamice (Supabase) NU sunt cache-uite — vin live întotdeauna
 const STATIC_ASSETS = [
-  '/pacient.html',
-  '/receptie.html',
-  '/card.html',
-  '/login.html',
-  '/index.html',
-  '/shared/supabase-client.js',
-  '/shared/config.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/icon-180.png',
+  '/icons/icon-152.png',
+  '/icons/icon-167.png',
+  '/icons/icon-32.png',
+  '/icons/icon-16.png',
   '/manifest-pacient.json',
-  '/manifest-receptie.json'
+  '/manifest-receptie.json',
+  '/favicon.ico'
 ];
 
-// Install event — cache static assets
+// ─── INSTALL ───
 self.addEventListener('install', function(event) {
   console.log('[SW] Install', CACHE_VERSION);
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
-      console.log('[SW] Caching static assets');
-      // Cache-uim individual ca să nu eșueze tot dacă unul nu se găsește
       return Promise.all(
         STATIC_ASSETS.map(function(url) {
-          return cache.add(url).catch(function(err) {
-            console.warn('[SW] Failed to cache', url, err);
+          return cache.add(url).catch(function() {
+            console.warn('[SW] Failed to cache', url);
           });
         })
       );
     }).then(function() {
-      // Skip waiting — activează imediat versiunea nouă
       return self.skipWaiting();
     })
   );
 });
 
-// Activate — cleanup vechile caches
+// ─── ACTIVATE ───
 self.addEventListener('activate', function(event) {
   console.log('[SW] Activate', CACHE_VERSION);
   event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(name) {
-          if (name !== CACHE_NAME && name.startsWith('clinica-central-')) {
-            console.log('[SW] Removing old cache', name);
-            return caches.delete(name);
-          }
-        })
-      );
-    }).then(function() {
-      // Take control of all open clients
-      return self.clients.claim();
+    Promise.all([
+      caches.keys().then(function(cacheNames) {
+        return Promise.all(
+          cacheNames.map(function(name) {
+            if (name !== CACHE_NAME && name.indexOf('clinica-central-') === 0) {
+              console.log('[SW] Removing old cache', name);
+              return caches.delete(name);
+            }
+          })
+        );
+      }),
+      self.clients.claim()
+    ]).then(function() {
+      return self.clients.matchAll().then(function(clients) {
+        clients.forEach(function(client) {
+          client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+        });
+      });
     })
   );
 });
 
-// Fetch — strategy: Network-first pentru API/dinamic, Cache-first pentru static
+// ─── FETCH ───
 self.addEventListener('fetch', function(event) {
   const url = new URL(event.request.url);
 
-  // NU intercepta cereri Supabase (API-ul trebuie mereu să fie live)
+  // NU intercepta Supabase API
   if (url.hostname.indexOf('supabase.co') >= 0) return;
 
-  // NU intercepta cereri non-GET
+  // NU intercepta non-GET
   if (event.request.method !== 'GET') return;
 
-  // NU intercepta cereri cross-origin (CDN-uri externe etc.)
+  // NU intercepta cross-origin
   if (url.origin !== self.location.origin) return;
 
-  // Strategy: Network-first pentru HTML (ca să primești update-uri rapid)
-  if (event.request.headers.get('accept').indexOf('text/html') >= 0) {
+  const acceptHeader = event.request.headers.get('accept') || '';
+  const isHTML = acceptHeader.indexOf('text/html') >= 0;
+  const isJS = url.pathname.endsWith('.js');
+  const isCSS = url.pathname.endsWith('.css');
+  const isImage = /\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(url.pathname);
+  const isManifest = url.pathname.endsWith('.json');
+
+  // STRATEGIE: Network-first pentru cod (HTML, JS, CSS, JSON)
+  if (isHTML || isJS || isCSS || isManifest) {
     event.respondWith(
       fetch(event.request)
         .then(function(response) {
-          // Salvează în cache versiunea nouă
-          var responseClone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, responseClone);
-          });
+          if (response.ok) {
+            var clone = response.clone();
+            caches.open(CACHE_NAME).then(function(cache) {
+              cache.put(event.request, clone);
+            });
+          }
           return response;
         })
         .catch(function() {
-          // Offline — servește din cache
           return caches.match(event.request).then(function(cached) {
             if (cached) return cached;
-            // Fallback la pacient.html dacă nimic nu se găsește
-            return caches.match('/pacient.html');
+            if (isHTML) {
+              return caches.match('/pacient.html')
+                .then(function(c) { return c || caches.match('/receptie.html'); });
+            }
+            return new Response('Offline', { status: 503 });
           });
         })
     );
     return;
   }
 
-  // Strategy: Cache-first pentru assets statice (JS, CSS, imagini)
-  event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      if (cached) {
-        // Întoarcă din cache, dar update silent în background
-        fetch(event.request).then(function(response) {
+  // STRATEGIE: Cache-first pentru imagini
+  if (isImage) {
+    event.respondWith(
+      caches.match(event.request).then(function(cached) {
+        if (cached) {
+          // Update silent în background
+          fetch(event.request).then(function(response) {
+            if (response.ok) {
+              var clone = response.clone();
+              caches.open(CACHE_NAME).then(function(cache) {
+                cache.put(event.request, clone);
+              });
+            }
+          }).catch(function() {});
+          return cached;
+        }
+        return fetch(event.request).then(function(response) {
           if (response.ok) {
-            var responseClone = response.clone();
+            var clone = response.clone();
             caches.open(CACHE_NAME).then(function(cache) {
-              cache.put(event.request, responseClone);
+              cache.put(event.request, clone);
             });
           }
-        }).catch(function() {/* offline, ok */});
-        return cached;
-      }
-      // Nu e în cache — fetch from network
-      return fetch(event.request).then(function(response) {
-        if (response.ok) {
-          var responseClone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
-      });
-    })
-  );
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Restul — direct la network
 });
 
-// Listen for messages from client (e.g., manual update trigger)
+// ─── MESSAGES ───
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(cacheNames.map(function(name) {
+        return caches.delete(name);
+      }));
+    });
   }
 });
