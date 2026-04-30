@@ -483,11 +483,30 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('service-worker.js')
       .then(function(reg) {
-        console.log('[PWA] Service Worker înregistrat:', reg.scope);
+        console.log('[PWA] Service Worker înregistrat');
+        reg.update();
+        setInterval(function() { reg.update(); }, 60000);
+        reg.addEventListener('updatefound', function() {
+          var newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', function() {
+            if (newWorker.state === 'activated') {
+              console.log('[PWA] Versiune nouă activată');
+            }
+          });
+        });
       })
       .catch(function(err) {
         console.warn('[PWA] Service Worker eșuat:', err);
       });
+
+    var hasReloaded = false;
+    navigator.serviceWorker.addEventListener('message', function(ev) {
+      if (ev.data && ev.data.type === 'SW_UPDATED' && !hasReloaded) {
+        hasReloaded = true;
+        setTimeout(function() { window.location.reload(); }, 500);
+      }
+    });
   });
 }
 
