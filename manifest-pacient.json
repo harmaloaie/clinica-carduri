@@ -1,0 +1,43 @@
+{
+  "name": "Cardul Păun – Clinica Central",
+  "short_name": "Cardul Păun",
+  "description": "Cardul tău de fidelitate Clinica Central. Vezi discount-ul, istoricul tranzacțiilor și ofertele active.",
+  "start_url": "/pacient.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b122c",
+  "theme_color": "#0b122c",
+  "lang": "ro",
+  "dir": "ltr",
+  "categories": ["health", "medical", "lifestyle"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Cardul meu",
+      "short_name": "Card",
+      "description": "Vezi cardul tău și discount-ul",
+      "url": "/pacient.html?tab=card",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
