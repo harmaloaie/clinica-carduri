@@ -1,0 +1,8 @@
+supabase/
+*.sql
+docs/
+*.md
+wrangler.jsonc
+node_modules/
+*.bak
+*.tmp

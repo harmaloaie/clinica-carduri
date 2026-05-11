@@ -240,11 +240,11 @@ body {
     <button type="submit" class="btn" id="submitBtn">Intră în cont →</button>
   </form>
 
-  <!-- Form pentru pacient (OTP - cod 6 cifre) -->
+  <!-- Form pentru client (OTP - cod 8 cifre) -->
   <form id="otpStep1Form" autocomplete="on" style="display:none">
     <div class="info-magic">
       <strong>Login fără parolă</strong>
-      Introdu email-ul. Vei primi un cod de 6 cifre pe care îl tastezi mai jos.
+      Introdu email-ul. Vei primi un cod de 8 cifre pe care îl tastezi mai jos.
     </div>
 
     <div class="field">
@@ -294,11 +294,11 @@ var titles = {
   admin: { title: 'Login <em>admin</em>', sub: 'Acces panou administrare' },
   partener: { title: 'Login <em>partener</em>', sub: 'Acces pentru admin clinică parteneră' },
   receptioner: { title: 'Login <em>recepție</em>', sub: 'Pentru scanare QR și înregistrare tranzacții' },
-  pacient: { title: 'Login <em>pacient</em>', sub: 'Acces la cardul tău și istoric' }
+  pacient: { title: 'Login <em>client</em>', sub: 'Acces la cardul tău și istoric' }
 };
 document.getElementById("loginTitle").innerHTML = titles[loginType].title;
 document.getElementById("loginSub").textContent = titles[loginType].sub;
-document.title = "Login " + loginType + " · Clinica Central";
+document.title = "Login " + (loginType === "pacient" ? "client" : loginType) + " · Clinica Central";
 
 // Dacă userul vine de la card.html (a scanat QR), arată mesaj special
 var nextParam = params.get("next") || "";
@@ -320,17 +320,17 @@ var switches = {
   admin: [
     { href: "login.html?type=partener", label: "Ești admin partener?" },
     { href: "login.html?type=receptioner", label: "Ești recepționer?" },
-    { href: "login.html?type=pacient", label: "Ești pacient?" }
+    { href: "login.html?type=pacient", label: "Ești client?" }
   ],
   partener: [
     { href: "login.html?type=admin", label: "Ești admin?" },
     { href: "login.html?type=receptioner", label: "Ești recepționer?" },
-    { href: "login.html?type=pacient", label: "Ești pacient?" }
+    { href: "login.html?type=pacient", label: "Ești client?" }
   ],
   receptioner: [
     { href: "login.html?type=admin", label: "Ești admin?" },
     { href: "login.html?type=partener", label: "Ești admin partener?" },
-    { href: "login.html?type=pacient", label: "Ești pacient?" }
+    { href: "login.html?type=pacient", label: "Ești client?" }
   ],
   pacient: [
     { href: "login.html?type=admin", label: "Ești admin?" },
@@ -363,12 +363,9 @@ function showSuccess(html) {
   var next = params.get("next") || "";
 
   // Caz special: când next=card.html (scan QR), DOAR receptioner sau partener pot continua
-  // Admin/pacient trebuie să se logheze ca receptioner — nu îi redirectăm la dashboard
   var isCardScan = next.indexOf("card.html") >= 0;
   if (isCardScan && (type === "admin" || type === "pacient")) {
-    // Force logout - nu mai e nimic auto să facă
     await Clinica.signOut();
-    // Permite forma de login să apară (nu redirect)
     return;
   }
 
@@ -428,7 +425,7 @@ document.getElementById("passwordForm").addEventListener("submit", async functio
   }
 });
 
-// OTP login pentru pacient — Pasul 1: trimite cod pe email
+// OTP login pentru client — Pasul 1: trimite cod pe email
 var savedEmail = "";
 
 document.getElementById("otpStep1Form").addEventListener("submit", async function(ev) {
@@ -441,19 +438,24 @@ document.getElementById("otpStep1Form").addEventListener("submit", async functio
   var email = document.getElementById("emailOtp").value.trim().toLowerCase();
   savedEmail = email;
 
-  // signInWithOtp cu shouldCreateUser=false (utilizator trebuie să existe deja)
-  // Trimite cod (nu link) — controlled de Email Template în Supabase
+  // signInWithOtp cu shouldCreateUser=true
+  // Permitem crearea automată de auth.user pentru clienții adăugați de admin
+  // Securitatea e asigurată de RLS - useri fără rol în baza de date nu văd nimic
   var { error } = await sb.auth.signInWithOtp({
     email: email,
     options: {
-      shouldCreateUser: false  // doar useri existenți (creați de admin)
+      shouldCreateUser: true
     }
   });
 
   if (error) {
     var msg = error.message || "necunoscută";
-    if (msg.toLowerCase().indexOf("not found") >= 0 || msg.toLowerCase().indexOf("not authorized") >= 0) {
-      showError("Adresa de email nu este înregistrată. Contactează clinica pentru a primi cardul.");
+    if (msg.toLowerCase().indexOf("not found") >= 0 ||
+        msg.toLowerCase().indexOf("not authorized") >= 0 ||
+        msg.toLowerCase().indexOf("signups not allowed") >= 0) {
+      showError("Adresa de email nu este înregistrată în sistem. Contactează Clinica Central pentru a primi cardul de fidelitate.");
+    } else if (msg.toLowerCase().indexOf("rate") >= 0) {
+      showError("Prea multe încercări. Așteaptă câteva minute și încearcă din nou.");
     } else {
       showError("Eroare la trimitere: " + msg);
     }
@@ -503,9 +505,11 @@ document.getElementById("otpStep2Form").addEventListener("submit", async functio
   }
 
   // Verifică tipul utilizatorului
+  // Dacă userul s-a creat în auth.users dar nu există în tabela pacienti,
+  // getUserType() va întoarce null și nu vor avea acces (RLS-ul îi blochează)
   var actualType = await Clinica.getUserType();
   if (actualType !== "pacient") {
-    showError("Această adresă nu are cont de pacient. Contactează administratorul.");
+    showError("Această adresă de email nu este înregistrată ca client al clinicii. Contactează Clinica Central pentru a primi cardul de fidelitate.");
     await Clinica.signOut();
     btn.disabled = false;
     btn.textContent = "Verifică & autentifică →";
@@ -527,7 +531,7 @@ document.getElementById("otpResendBtn").addEventListener("click", async function
 
   var { error } = await sb.auth.signInWithOtp({
     email: savedEmail,
-    options: { shouldCreateUser: false }
+    options: { shouldCreateUser: true }
   });
 
   btn.disabled = false;
