@@ -99,6 +99,36 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
 .btn-sm:hover { background: var(--ink); color: white; }
 .btn-sm.primary { background: var(--ink); color: white; }
 .btn-sm.primary:hover { background: var(--accent); border-color: var(--accent); }
+.btn-sm.danger { color: var(--accent); border-color: var(--accent); }
+.btn-sm.danger:hover { background: var(--accent); color: white; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.tabs .tab {
+  padding: 12px 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(15, 17, 23, 0.5);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+}
+.tabs .tab:hover { color: var(--ink); }
+.tabs .tab.active { color: var(--ink); border-bottom-color: var(--gold); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
 
 /* Welcome card */
 .welcome {
@@ -131,69 +161,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   line-height: 1.6;
   position: relative;
   margin-bottom: 16px;
-}
-.welcome .manual-code-box {
-  background: rgba(248,246,241,0.08);
-  padding: 18px 20px;
-  border-radius: var(--radius);
-  position: relative;
-  margin-top: 18px;
-}
-.welcome .manual-code-box label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(248,246,241,0.7);
-  font-weight: 600;
-  display: block;
-  margin-bottom: 10px;
-}
-.welcome .code-input-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.welcome .code-input-row input {
-  flex: 1;
-  padding: 12px 14px;
-  font-size: 16px;
-  border: 1.5px solid rgba(248,246,241,0.2);
-  border-radius: var(--radius);
-  background: rgba(15,17,23,0.4);
-  color: var(--paper);
-  outline: none;
-  letter-spacing: 0.05em;
-}
-.welcome .code-input-row input::placeholder {
-  color: rgba(248,246,241,0.3);
-}
-.welcome .code-input-row input:focus {
-  border-color: var(--gold);
-  background: rgba(15,17,23,0.6);
-}
-.welcome .code-input-row button {
-  padding: 12px 22px;
-  background: var(--gold);
-  color: var(--ink);
-  border: none;
-  border-radius: var(--radius);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.welcome .code-input-row button:hover {
-  background: white;
-}
-.welcome .manual-code-box .hint {
-  font-size: 12px;
-  color: rgba(248,246,241,0.55);
-  margin: 0;
-  line-height: 1.4;
 }
 
 /* KPIs */
@@ -301,6 +268,9 @@ tbody tr:hover { background: var(--cream); }
 .status-tag.facturat    { background: rgba(26, 61, 107, 0.15); color: #1a3d6b; }
 .status-tag.incasat     { background: rgba(26, 107, 60, 0.25); color: var(--green); }
 .status-tag.anulat      { background: rgba(200, 57, 43, 0.15); color: var(--accent); }
+.status-tag.activa      { background: rgba(26, 107, 60, 0.15); color: var(--green); }
+.status-tag.inactiva    { background: rgba(15, 17, 23, 0.1); color: rgba(15,17,23,0.5); }
+.status-tag.expirata    { background: rgba(200, 57, 43, 0.15); color: var(--accent); }
 
 .loading {
   display: flex; align-items: center; justify-content: center;
@@ -316,9 +286,281 @@ tbody tr:hover { background: var(--cream); }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ═══════ OFERTE — Cards layout ═══════ */
+.oferte-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+.oferta-card {
+  background: white;
+  border: 1px solid rgba(15,17,23,0.12);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.oferta-card:hover {
+  box-shadow: 0 6px 20px -8px rgba(15,17,23,0.15);
+}
+.oferta-card.inactiva { opacity: 0.55; }
+.oferta-card.expirata { opacity: 0.7; }
+.oferta-card .img {
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: var(--cream);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.oferta-card .img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(15,17,23,0.3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.oferta-card .status-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+.oferta-card .body {
+  padding: 18px 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.oferta-card h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+.oferta-card .descriere {
+  font-size: 13px;
+  color: rgba(15,17,23,0.65);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+.oferta-card .preturi {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.oferta-card .pret-redus {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.01em;
+}
+.oferta-card .pret-normal {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: rgba(15,17,23,0.5);
+  text-decoration: line-through;
+}
+.oferta-card .reducere-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(200,57,43,0.12);
+  color: var(--accent);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.oferta-card .meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(15,17,23,0.5);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.oferta-card .detalii {
+  font-size: 12px;
+  color: rgba(15,17,23,0.7);
+  background: var(--cream);
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  line-height: 1.5;
+  border-left: 3px solid var(--gold);
+}
+.oferta-card .card-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15,17,23,0.08);
+}
+.oferta-card .card-actions button {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+
+/* MODAL */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,17,23,0.6);
+  z-index: 9000;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 30px 16px;
+  overflow-y: auto;
+}
+.modal-backdrop.show { display: flex; }
+.modal {
+  background: white;
+  border-radius: var(--radius);
+  max-width: 560px;
+  width: 100%;
+  padding: 30px 32px;
+  position: relative;
+  margin: auto 0;
+}
+.modal h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.modal h2 em { font-style: italic; color: var(--gold); }
+.modal .modal-sub {
+  font-size: 13px;
+  color: rgba(15,17,23,0.55);
+  margin-bottom: 22px;
+}
+.modal .close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: rgba(15,17,23,0.4);
+  width: 30px;
+  height: 30px;
+}
+.modal .close-btn:hover { color: var(--ink); }
+
+.field {
+  margin-bottom: 16px;
+}
+.field label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: rgba(15, 17, 23, 0.7);
+}
+.field label .req { color: var(--accent); }
+.field input, .field textarea, .field select {
+  width: 100%;
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  border: 1.5px solid rgba(15, 17, 23, 0.2);
+  border-radius: var(--radius);
+  background: var(--paper);
+  outline: none;
+}
+.field input:focus, .field textarea:focus { border-color: var(--ink); background: white; }
+.field textarea { resize: vertical; min-height: 70px; }
+.field .hint { font-size: 11px; color: rgba(15,17,23,0.5); margin-top: 4px; }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.image-upload {
+  border: 2px dashed rgba(15,17,23,0.2);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--paper);
+}
+.image-upload:hover { border-color: var(--gold); background: white; }
+.image-upload input[type=file] { display: none; }
+.image-upload .upload-icon { font-size: 32px; margin-bottom: 8px; }
+.image-upload .upload-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(15,17,23,0.6);
+}
+.image-upload .upload-hint {
+  font-size: 11px;
+  color: rgba(15,17,23,0.45);
+  margin-top: 4px;
+}
+.image-preview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+}
+.image-upload-progress {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  margin-top: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(15,17,23,0.1);
+}
+.modal-actions button {
+  flex: 1;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.error-msg {
+  background: rgba(200,57,43,0.08);
+  border: 1px solid rgba(200,57,43,0.25);
+  color: var(--accent);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  margin-bottom: 14px;
+  display: none;
+}
+.error-msg.show { display: block; }
+
 /* ═══════ MOBILE OPTIMIZATIONS ═══════ */
 @media (max-width: 768px) {
-  /* Topbar — compact */
   .topbar {
     padding: 12px 14px;
     flex-direction: column;
@@ -336,41 +578,23 @@ tbody tr:hover { background: var(--cream); }
     font-size: 11px;
   }
 
-  /* Wrap — fără padding excesiv */
   .wrap { padding: 18px 14px 40px; }
 
-  /* Welcome card — mai compact */
-  .welcome {
-    padding: 22px 18px;
-    margin-bottom: 22px;
-  }
+  .welcome { padding: 22px 18px; margin-bottom: 22px; }
   .welcome h2 { font-size: 22px; }
   .welcome p { font-size: 13px; }
 
-  /* Manual code box — TARGET MAJOR pentru mobile */
-  .welcome .manual-code-box { padding: 14px 14px; }
-  .welcome .code-input-row {
-    flex-direction: column;
-    gap: 10px;
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
   }
-  .welcome .code-input-row input {
-    width: 100%;
-    padding: 14px 14px;
-    font-size: 16px;  /* iOS zoom prevention */
-    text-align: center;
-    letter-spacing: 0.1em;
-  }
-  .welcome .code-input-row button {
-    width: 100%;
-    padding: 14px;
-    font-size: 14px;
-  }
-  .welcome .manual-code-box .hint {
-    font-size: 11px;
-    text-align: center;
+  .tabs .tab {
+    padding: 10px 16px;
+    font-size: 12px;
+    white-space: nowrap;
   }
 
-  /* Section head — stack */
   .section-head {
     flex-direction: column;
     align-items: flex-start;
@@ -387,16 +611,11 @@ tbody tr:hover { background: var(--cream); }
     padding: 10px 12px;
   }
 
-  /* KPIs — 2 pe rând în loc de auto */
-  .kpis {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
+  .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
   .kpi { padding: 14px 14px; }
   .kpi .lbl { font-size: 9px; }
   .kpi .val { font-size: 22px; }
 
-  /* Filter row — stack */
   .filter-row {
     flex-direction: column;
     align-items: stretch;
@@ -409,11 +628,8 @@ tbody tr:hover { background: var(--cream); }
     font-size: 14px;
   }
 
-  /* Table — convert to cards on mobile */
-  .table-wrap {
-    border: none;
-    background: transparent;
-  }
+  /* Table -> cards */
+  .table-wrap { border: none; background: transparent; }
   table thead { display: none; }
   table tbody, table tr { display: block; }
   table tr {
@@ -452,9 +668,15 @@ tbody tr:hover { background: var(--cream); }
     padding-bottom: 8px;
     margin-bottom: 4px;
   }
-  table td[data-label="Pacient"]::before {
-    margin-bottom: 4px;
-  }
+  table td[data-label="Pacient"]::before { margin-bottom: 4px; }
+
+  /* Oferte 1 col */
+  .oferte-grid { grid-template-columns: 1fr; }
+
+  /* Modal mobile */
+  .modal { padding: 24px 20px; }
+  .modal h2 { font-size: 22px; }
+  .field-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 380px) {
@@ -479,66 +701,168 @@ tbody tr:hover { background: var(--cream); }
 
   <div class="welcome">
     <h2>Bun venit, <em id="welcomePartener">Partener</em></h2>
-    <p>Aici vezi performanța clinicii tale: tranzacții înregistrate, sume totale, comisioane și discount-uri oferite pacienților.</p>
+    <p>Aici vezi performanța clinicii tale: tranzacții înregistrate, sume totale, comisioane și discount-uri oferite clienților. Poți de asemenea să gestionezi ofertele tale pentru clienți.</p>
     <p style="margin-top:10px;font-size:12px;color:rgba(248,246,241,0.55);font-family:'JetBrains Mono',monospace;letter-spacing:0.05em">
       📱 Recepționera de la unitatea ta înregistrează tranzacțiile separat, pe contul ei.
     </p>
   </div>
 
-  <div class="section-head">
-    <h1>Tranzacții <em>înregistrate</em></h1>
-    <div class="actions">
-      <button class="btn-sm" id="reloadBtn">↻ Reîncarcă</button>
-      <button class="btn-sm primary" id="exportBtn">⬇ Export CSV</button>
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="tranzactii">Tranzacții</button>
+    <button class="tab" data-tab="oferte">Oferte</button>
+  </div>
+
+  <!-- ═══ PANEL: TRANZACȚII ═══ -->
+  <section class="tab-panel active" id="panel-tranzactii">
+    <div class="section-head">
+      <h1>Tranzacții <em>înregistrate</em></h1>
+      <div class="actions">
+        <button class="btn-sm" id="reloadBtn">↻ Reîncarcă</button>
+        <button class="btn-sm primary" id="exportBtn">⬇ Export CSV</button>
+      </div>
     </div>
-  </div>
 
-  <!-- KPIs -->
-  <div class="kpis">
-    <div class="kpi"><div class="lbl">Tranzacții</div><div class="val" id="kTxCount">—</div></div>
-    <div class="kpi"><div class="lbl">Sumă fără discount</div><div class="val" id="kTotalLista">—</div></div>
-    <div class="kpi"><div class="lbl">Sumă încasată</div><div class="val green" id="kTotalPlatit">—</div></div>
-    <div class="kpi"><div class="lbl">Comision (10%)</div><div class="val gold" id="kComisionTotal">—</div></div>
-    <div class="kpi"><div class="lbl">Discount oferit pacienți</div><div class="val" id="kTotalEconomie">—</div></div>
-    <div class="kpi"><div class="lbl">Profit net (10% − disc.)</div><div class="val"><em id="kProfitNet">—</em></div></div>
-  </div>
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">Tranzacții</div><div class="val" id="kTxCount">—</div></div>
+      <div class="kpi"><div class="lbl">Sumă fără discount</div><div class="val" id="kTotalLista">—</div></div>
+      <div class="kpi"><div class="lbl">Sumă încasată</div><div class="val green" id="kTotalPlatit">—</div></div>
+      <div class="kpi"><div class="lbl">Comision (10%)</div><div class="val gold" id="kComisionTotal">—</div></div>
+      <div class="kpi"><div class="lbl">Discount oferit clienți</div><div class="val" id="kTotalEconomie">—</div></div>
+      <div class="kpi"><div class="lbl">Profit net (10% − disc.)</div><div class="val"><em id="kProfitNet">—</em></div></div>
+    </div>
 
-  <!-- Filters -->
-  <div class="filter-row">
-    <label>De la:</label>
-    <input type="date" id="fFrom">
-    <label>Până la:</label>
-    <input type="date" id="fTo">
-  </div>
+    <!-- Filters -->
+    <div class="filter-row">
+      <label>De la:</label>
+      <input type="date" id="fFrom">
+      <label>Până la:</label>
+      <input type="date" id="fTo">
+    </div>
 
-  <!-- Table -->
-  <div id="loadingTx" class="loading">Se încarcă tranzacțiile...</div>
-  <div class="table-wrap" id="txWrap" style="display:none">
-    <table>
-      <thead>
-        <tr>
-          <th>Pacient</th>
-          <th>Data</th>
-          <th>Cod ref</th>
-          <th>Servicii</th>
-          <th style="text-align:right">Sumă listă</th>
-          <th style="text-align:right">Plătit</th>
-          <th style="text-align:right">Discount</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="txTbody"></tbody>
-    </table>
-  </div>
+    <!-- Table -->
+    <div id="loadingTx" class="loading">Se încarcă tranzacțiile...</div>
+    <div class="table-wrap" id="txWrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>Pacient</th>
+            <th>Data</th>
+            <th>Cod ref</th>
+            <th>Servicii</th>
+            <th style="text-align:right">Sumă listă</th>
+            <th style="text-align:right">Plătit</th>
+            <th style="text-align:right">Discount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="txTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ PANEL: OFERTE ═══ -->
+  <section class="tab-panel" id="panel-oferte">
+    <div class="section-head">
+      <h1>Ofertele <em>tale</em></h1>
+      <div class="actions">
+        <button class="btn-sm" id="reloadOferteBtn">↻ Reîncarcă</button>
+        <button class="btn-sm primary" id="addOfertaBtn">+ Adaugă ofertă</button>
+      </div>
+    </div>
+
+    <div id="loadingOferte" class="loading">Se încarcă ofertele...</div>
+    <div id="oferteContainer" style="display:none"></div>
+  </section>
 
 </main>
+
+<!-- MODAL: Adaugă/Editează ofertă -->
+<div class="modal-backdrop" id="ofertaModal">
+  <div class="modal">
+    <button class="close-btn" id="closeModalBtn">×</button>
+    <h2 id="modalTitle">Ofertă <em>nouă</em></h2>
+    <div class="modal-sub" id="modalSub">Completează datele și apasă Salvează. Clienții vor vedea oferta imediat după activare.</div>
+
+    <div class="error-msg" id="ofertaErrorMsg"></div>
+
+    <form id="ofertaForm">
+      <input type="hidden" id="ofertaId">
+
+      <div class="field">
+        <label>Imagine (JPG, PNG, WEBP — max 5MB)</label>
+        <label for="ofertaImageInput" class="image-upload" id="imageUploadBox">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Click pentru a încărca imagine</div>
+          <div class="upload-hint">Recomandat: 1200×750px</div>
+          <input type="file" id="ofertaImageInput" accept="image/jpeg,image/png,image/webp">
+        </label>
+        <div id="imagePreviewWrap" style="display:none;margin-top:10px">
+          <img id="imagePreview" class="image-preview" alt="Preview">
+          <button type="button" class="btn-sm danger" id="removeImageBtn" style="width:100%">× Șterge imagine</button>
+        </div>
+        <div id="imageUploadProgress" class="image-upload-progress" style="display:none">Se încarcă...</div>
+        <input type="hidden" id="ofertaImageUrl">
+      </div>
+
+      <div class="field">
+        <label>Titlu <span class="req">*</span></label>
+        <input type="text" id="ofertaTitlu" required maxlength="120" placeholder="Ex: Consultație stomatologică -25%">
+      </div>
+
+      <div class="field">
+        <label>Descriere scurtă</label>
+        <textarea id="ofertaDescriere" maxlength="300" placeholder="Ex: Verificare cavitate orală + curățare profesională"></textarea>
+        <div class="hint">Apare pe cardul ofertei la client</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Preț normal (RON)</label>
+          <input type="number" id="ofertaPretNormal" min="0" step="0.01" placeholder="200.00">
+        </div>
+        <div class="field">
+          <label>Preț redus (RON) <span class="req">*</span></label>
+          <input type="number" id="ofertaPretRedus" min="0" step="0.01" required placeholder="150.00">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Valabil de la</label>
+          <input type="date" id="ofertaDataInceput">
+        </div>
+        <div class="field">
+          <label>Valabil până la</label>
+          <input type="date" id="ofertaDataSfarsit">
+          <div class="hint">După această dată, oferta dispare automat</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Detalii / Cum se obține</label>
+        <textarea id="ofertaDetalii" maxlength="500" placeholder="Ex: Sună la 0712345678 pentru programare. Menționează codul OFERTA-25 la recepție. Valabil doar pe bază de programare."></textarea>
+        <div class="hint">Instrucțiuni pentru client (cum obține oferta)</div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-sm" id="cancelBtn">Anulează</button>
+        <button type="submit" class="btn-sm primary" id="saveBtn">Salvează</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared/config.js"></script>
 <script src="shared/supabase-client.js"></script>
 <script>
 var allTx = [];
+var allOferte = [];
 var partenerProfile = null;
+var editingOfertaId = null;
+var currentImageUrl = "";  // URL imagine selectată/încărcată în modal
 
 (async function init() {
   partenerProfile = await Clinica.requirePartener();
@@ -551,6 +875,27 @@ var partenerProfile = null;
   await loadTranzactii();
 })();
 
+// ═══════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════
+var oferteLoaded = false;
+document.querySelectorAll(".tab").forEach(function(t) {
+  t.addEventListener("click", function() {
+    document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
+    document.querySelectorAll(".tab-panel").forEach(function(x) { x.classList.remove("active"); });
+    t.classList.add("active");
+    document.getElementById("panel-" + t.dataset.tab).classList.add("active");
+
+    if (t.dataset.tab === "oferte" && !oferteLoaded) {
+      oferteLoaded = true;
+      loadOferte();
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// TRANZACȚII
+// ═══════════════════════════════════════════════════════════════
 async function loadTranzactii() {
   document.getElementById("loadingTx").style.display = "flex";
   document.getElementById("txWrap").style.display = "none";
@@ -571,13 +916,9 @@ async function loadTranzactii() {
 
   allTx = data || [];
 
-  // KPIs — calcul complet (ca la admin general)
-  var COMISION_PCT = 10; // 10% fix pentru toți partenerii
-  var totalLista = 0;
-  var totalPlatit = 0;
-  var totalEcon = 0;
-  var totalComision = 0;
-  var totalProfit = 0;
+  var COMISION_PCT = 10;
+  var totalLista = 0, totalPlatit = 0, totalEcon = 0;
+  var totalComision = 0, totalProfit = 0;
 
   allTx.forEach(function(t) {
     if (t.status === "anulat") return;
@@ -601,12 +942,11 @@ async function loadTranzactii() {
   document.getElementById("kTotalEconomie").textContent = Clinica.formatRON(totalEcon);
   document.getElementById("kProfitNet").textContent = Clinica.formatRON(totalProfit);
 
-  // Table
   var tbody = document.getElementById("txTbody");
   document.getElementById("txWrap").style.display = "block";
 
   if (!allTx.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty"><h3>Fără tranzacții</h3>Scanează un QR de pe cardul unui pacient pentru a începe.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty"><h3>Fără tranzacții</h3>Scanează un QR de pe cardul unui client pentru a începe.</td></tr>';
     return;
   }
 
@@ -627,14 +967,11 @@ async function loadTranzactii() {
   }).join("");
 }
 
-// Filters
 ["fFrom", "fTo"].forEach(function(id) {
   document.getElementById(id).addEventListener("change", loadTranzactii);
 });
-
 document.getElementById("reloadBtn").addEventListener("click", loadTranzactii);
 
-// Export CSV
 document.getElementById("exportBtn").addEventListener("click", function() {
   if (!allTx.length) { alert("Nu sunt tranzacții de exportat"); return; }
   var headers = ["Data", "Cod ref", "Pacient", "Card", "Servicii", "Pret lista", "Pret platit", "Discount %", "Economie", "Status"];
@@ -663,6 +1000,309 @@ document.getElementById("exportBtn").addEventListener("click", function() {
   a.click();
   URL.revokeObjectURL(url);
 });
+
+// ═══════════════════════════════════════════════════════════════
+// OFERTE
+// ═══════════════════════════════════════════════════════════════
+async function loadOferte() {
+  document.getElementById("loadingOferte").style.display = "flex";
+  document.getElementById("oferteContainer").style.display = "none";
+
+  var { data, error } = await Clinica.listOfertePartener();
+  document.getElementById("loadingOferte").style.display = "none";
+
+  if (error) {
+    console.error(error);
+    document.getElementById("oferteContainer").innerHTML =
+      '<div class="empty"><h3>Eroare</h3>Nu s-au putut încărca ofertele. ' + Clinica.escapeHtml(error.message || '') + '</div>';
+    document.getElementById("oferteContainer").style.display = "block";
+    return;
+  }
+
+  allOferte = data || [];
+
+  var container = document.getElementById("oferteContainer");
+  container.style.display = "block";
+
+  if (!allOferte.length) {
+    container.innerHTML = '<div class="empty"><h3>Fără oferte</h3>Apasă „+ Adaugă ofertă" pentru a crea prima ofertă pentru clienții tăi.</div>';
+    return;
+  }
+
+  var today = new Date().toISOString().slice(0, 10);
+
+  var html = '<div class="oferte-grid">';
+  allOferte.forEach(function(o) {
+    var isExpirata = o.data_sfarsit && o.data_sfarsit < today;
+    var cardClass = "oferta-card";
+    if (!o.activ) cardClass += " inactiva";
+    else if (isExpirata) cardClass += " expirata";
+
+    var statusLabel, statusClass;
+    if (!o.activ) {
+      statusLabel = "Inactivă";
+      statusClass = "inactiva";
+    } else if (isExpirata) {
+      statusLabel = "Expirată";
+      statusClass = "expirata";
+    } else {
+      statusLabel = "Activă";
+      statusClass = "activa";
+    }
+
+    var reducerePct = "";
+    if (o.pret_normal && o.pret_redus && parseFloat(o.pret_normal) > parseFloat(o.pret_redus)) {
+      var pct = Math.round((1 - parseFloat(o.pret_redus) / parseFloat(o.pret_normal)) * 100);
+      reducerePct = '<span class="reducere-tag">−' + pct + '%</span>';
+    }
+
+    var validitate = "";
+    if (o.data_inceput || o.data_sfarsit) {
+      var parts = [];
+      if (o.data_inceput) parts.push("De la " + Clinica.formatDateOnly(o.data_inceput));
+      if (o.data_sfarsit) parts.push("Până la " + Clinica.formatDateOnly(o.data_sfarsit));
+      validitate = '<div>' + parts.join(" · ") + '</div>';
+    }
+
+    html += '<div class="' + cardClass + '">' +
+      '<div class="status-badge"><span class="status-tag ' + statusClass + '">' + statusLabel + '</span></div>' +
+
+      (o.imagine_url ?
+        '<div class="img" style="background-image:url(' + Clinica.escapeHtml(o.imagine_url) + ')"></div>' :
+        '<div class="img"><div class="img-placeholder">FĂRĂ IMAGINE</div></div>') +
+
+      '<div class="body">' +
+        '<h3>' + Clinica.escapeHtml(o.titlu) + '</h3>' +
+        (o.descriere ? '<div class="descriere">' + Clinica.escapeHtml(o.descriere) + '</div>' : '') +
+
+        '<div class="preturi">' +
+          '<div class="pret-redus">' + Clinica.formatRON(o.pret_redus || 0) + '</div>' +
+          (o.pret_normal ? '<div class="pret-normal">' + Clinica.formatRON(o.pret_normal) + '</div>' : '') +
+          reducerePct +
+        '</div>' +
+
+        (validitate ? '<div class="meta">' + validitate + '</div>' : '') +
+
+        (o.detalii ? '<div class="detalii">' + Clinica.escapeHtml(o.detalii) + '</div>' : '') +
+
+        '<div class="card-actions">' +
+          '<button class="btn-sm" onclick="editOferta(\'' + o.id + '\')">Editează</button>' +
+          '<button class="btn-sm" onclick="toggleOferta(\'' + o.id + '\', ' + (!o.activ) + ')">' +
+            (o.activ ? 'Dezactivează' : 'Activează') +
+          '</button>' +
+          '<button class="btn-sm danger" onclick="deleteOferta(\'' + o.id + '\')">Șterge</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+document.getElementById("reloadOferteBtn").addEventListener("click", loadOferte);
+document.getElementById("addOfertaBtn").addEventListener("click", function() {
+  openOfertaModal(null);
+});
+
+function openOfertaModal(ofertaId) {
+  editingOfertaId = ofertaId;
+  currentImageUrl = "";
+
+  // Reset form
+  document.getElementById("ofertaForm").reset();
+  document.getElementById("ofertaId").value = "";
+  document.getElementById("ofertaImageUrl").value = "";
+  document.getElementById("imagePreviewWrap").style.display = "none";
+  document.getElementById("imageUploadBox").style.display = "block";
+  document.getElementById("ofertaErrorMsg").classList.remove("show");
+
+  if (ofertaId) {
+    // Edit mode
+    var o = allOferte.find(function(x) { return x.id === ofertaId; });
+    if (!o) return;
+
+    document.getElementById("modalTitle").innerHTML = 'Editează <em>ofertă</em>';
+    document.getElementById("ofertaId").value = o.id;
+    document.getElementById("ofertaTitlu").value = o.titlu || "";
+    document.getElementById("ofertaDescriere").value = o.descriere || "";
+    document.getElementById("ofertaPretNormal").value = o.pret_normal || "";
+    document.getElementById("ofertaPretRedus").value = o.pret_redus || "";
+    document.getElementById("ofertaDataInceput").value = o.data_inceput || "";
+    document.getElementById("ofertaDataSfarsit").value = o.data_sfarsit || "";
+    document.getElementById("ofertaDetalii").value = o.detalii || "";
+
+    if (o.imagine_url) {
+      currentImageUrl = o.imagine_url;
+      document.getElementById("ofertaImageUrl").value = o.imagine_url;
+      document.getElementById("imagePreview").src = o.imagine_url;
+      document.getElementById("imagePreviewWrap").style.display = "block";
+      document.getElementById("imageUploadBox").style.display = "none";
+    }
+  } else {
+    // New mode
+    document.getElementById("modalTitle").innerHTML = 'Ofertă <em>nouă</em>';
+  }
+
+  document.getElementById("ofertaModal").classList.add("show");
+}
+
+function closeOfertaModal() {
+  document.getElementById("ofertaModal").classList.remove("show");
+  editingOfertaId = null;
+  currentImageUrl = "";
+}
+
+document.getElementById("closeModalBtn").addEventListener("click", closeOfertaModal);
+document.getElementById("cancelBtn").addEventListener("click", closeOfertaModal);
+
+// Click outside modal -> close
+document.getElementById("ofertaModal").addEventListener("click", function(ev) {
+  if (ev.target === this) closeOfertaModal();
+});
+
+// Image upload
+document.getElementById("ofertaImageInput").addEventListener("change", async function(ev) {
+  var file = ev.target.files[0];
+  if (!file) return;
+
+  document.getElementById("ofertaErrorMsg").classList.remove("show");
+  document.getElementById("imageUploadProgress").style.display = "block";
+  document.getElementById("imageUploadProgress").textContent = "Se încarcă...";
+
+  var { data, error } = await Clinica.uploadOfertaImage(file, partenerProfile.parteneri.cod);
+
+  document.getElementById("imageUploadProgress").style.display = "none";
+
+  if (error) {
+    showOfertaError("Eroare la încărcare imagine: " + (error.message || "necunoscută"));
+    return;
+  }
+
+  currentImageUrl = data.url;
+  document.getElementById("ofertaImageUrl").value = data.url;
+  document.getElementById("imagePreview").src = data.url;
+  document.getElementById("imagePreviewWrap").style.display = "block";
+  document.getElementById("imageUploadBox").style.display = "none";
+});
+
+// Remove image
+document.getElementById("removeImageBtn").addEventListener("click", async function() {
+  if (currentImageUrl) {
+    // Încearcă să șteargă din Storage (nu fatal dacă eșuează)
+    await Clinica.deleteOfertaImage(currentImageUrl);
+  }
+  currentImageUrl = "";
+  document.getElementById("ofertaImageUrl").value = "";
+  document.getElementById("imagePreviewWrap").style.display = "none";
+  document.getElementById("imageUploadBox").style.display = "block";
+  document.getElementById("ofertaImageInput").value = "";
+});
+
+// Submit form
+document.getElementById("ofertaForm").addEventListener("submit", async function(ev) {
+  ev.preventDefault();
+  document.getElementById("ofertaErrorMsg").classList.remove("show");
+
+  var btn = document.getElementById("saveBtn");
+  btn.disabled = true;
+  btn.textContent = "Se salvează...";
+
+  var titlu = document.getElementById("ofertaTitlu").value.trim();
+  var pretRedus = parseFloat(document.getElementById("ofertaPretRedus").value) || 0;
+  var pretNormal = parseFloat(document.getElementById("ofertaPretNormal").value) || null;
+
+  if (!titlu) {
+    showOfertaError("Titlul e obligatoriu.");
+    btn.disabled = false;
+    btn.textContent = "Salvează";
+    return;
+  }
+  if (!pretRedus || pretRedus <= 0) {
+    showOfertaError("Prețul redus e obligatoriu și trebuie să fie > 0.");
+    btn.disabled = false;
+    btn.textContent = "Salvează";
+    return;
+  }
+  if (pretNormal && pretNormal <= pretRedus) {
+    showOfertaError("Prețul normal trebuie să fie mai mare decât prețul redus (altfel nu e ofertă).");
+    btn.disabled = false;
+    btn.textContent = "Salvează";
+    return;
+  }
+
+  var payload = {
+    titlu: titlu,
+    descriere: document.getElementById("ofertaDescriere").value.trim() || null,
+    pret_normal: pretNormal,
+    pret_redus: pretRedus,
+    data_inceput: document.getElementById("ofertaDataInceput").value || null,
+    data_sfarsit: document.getElementById("ofertaDataSfarsit").value || null,
+    detalii: document.getElementById("ofertaDetalii").value.trim() || null,
+    imagine_url: document.getElementById("ofertaImageUrl").value || null,
+    activ: true
+  };
+
+  var result;
+  if (editingOfertaId) {
+    // UPDATE
+    result = await Clinica.updateOferta(editingOfertaId, payload);
+  } else {
+    // CREATE — setează partener_id și created_by
+    payload.partener_id = partenerProfile.parteneri.id;
+    var user = await Clinica.getCurrentUser();
+    if (user) payload.created_by = user.id;
+    result = await Clinica.createOferta(payload);
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Salvează";
+
+  if (result.error) {
+    showOfertaError("Eroare la salvare: " + (result.error.message || "necunoscută"));
+    return;
+  }
+
+  closeOfertaModal();
+  await loadOferte();
+});
+
+function showOfertaError(msg) {
+  var b = document.getElementById("ofertaErrorMsg");
+  b.textContent = msg;
+  b.classList.add("show");
+}
+
+// Acțiuni globale (apelate din onclick=)
+window.editOferta = function(id) {
+  openOfertaModal(id);
+};
+
+window.toggleOferta = async function(id, newActiv) {
+  var { error } = await Clinica.toggleOfertaActiv(id, newActiv);
+  if (error) {
+    alert("Eroare: " + (error.message || "necunoscută"));
+    return;
+  }
+  await loadOferte();
+};
+
+window.deleteOferta = async function(id) {
+  if (!confirm("Ștergi definitiv această ofertă? Acțiunea nu poate fi anulată.")) return;
+
+  // Găsește oferta ca să-i ștergem și imaginea din Storage
+  var oferta = allOferte.find(function(x) { return x.id === id; });
+  if (oferta && oferta.imagine_url) {
+    await Clinica.deleteOfertaImage(oferta.imagine_url);
+  }
+
+  var { error } = await Clinica.deleteOferta(id);
+  if (error) {
+    alert("Eroare la ștergere: " + (error.message || "necunoscută"));
+    return;
+  }
+  await loadOferte();
+};
 
 // Logout
 document.getElementById("logoutBtn").addEventListener("click", async function() {
