@@ -156,7 +156,7 @@ window.Clinica = {
     }
     var profile = await this.getPacientProfile();
     if (!profile) {
-      alert("Nu există un cont de pacient asociat acestui email. Cere admin-ului să verifice email-ul tău în profil.");
+      alert("Nu există un cont de client asociat acestui email. Cere admin-ului să verifice email-ul tău în profil.");
       await this.signOut();
       window.location.href = "login.html?type=pacient";
       return null;
@@ -164,30 +164,112 @@ window.Clinica = {
     return profile;
   },
 
-  // ─── Oferte ───
-  async listOferteActive() {
+  // ═══════════════════════════════════════════════════════════════
+  // ─── OFERTE (cu partener, prețuri, imagini) ───
+  // ═══════════════════════════════════════════════════════════════
+
+  // Listare oferte active pentru CLIENT — toate ofertele active de la toți partenerii
+  // Ascunde automat ofertele expirate (data_sfarsit < azi)
+  async listOferteActiveClient() {
+    var today = new Date().toISOString().slice(0, 10);
     var { data, error } = await sb
       .from("oferte")
-      .select("*")
+      .select("*, parteneri(id, cod, denumire, oras)")
       .eq("activ", true)
+      .or("data_sfarsit.is.null,data_sfarsit.gte." + today)
       .order("created_at", { ascending: false });
     return { data, error };
   },
+
+  // Listare oferte pentru PARTENER — doar ofertele lui (RLS filtrează automat)
+  async listOfertePartener() {
+    var { data, error } = await sb
+      .from("oferte")
+      .select("*, parteneri(id, cod, denumire)")
+      .order("created_at", { ascending: false });
+    return { data, error };
+  },
+
+  // Listare oferte pentru ADMIN general — toate ofertele
   async listOferteAdmin() {
     var { data, error } = await sb
       .from("oferte")
-      .select("*")
+      .select("*, parteneri(id, cod, denumire)")
       .order("created_at", { ascending: false });
     return { data, error };
   },
+
+  // Creare ofertă nouă
   async createOferta(payload) {
     return await sb.from("oferte").insert(payload).select().single();
   },
+
+  // Editare ofertă
   async updateOferta(id, payload) {
     return await sb.from("oferte").update(payload).eq("id", id).select().single();
   },
+
+  // Toggle activ/inactiv (în loc de delete — păstrăm istoria)
+  async toggleOfertaActiv(id, activ) {
+    return await sb.from("oferte").update({ activ: activ }).eq("id", id).select().single();
+  },
+
+  // Ștergere completă ofertă (DELETE definitiv)
   async deleteOferta(id) {
     return await sb.from("oferte").delete().eq("id", id);
+  },
+
+  // Upload imagine ofertă în Supabase Storage
+  // Returnează URL-ul public sau eroare
+  async uploadOfertaImage(file, partenerCod) {
+    if (!file) return { error: { message: "Nu există fișier de încărcat." } };
+
+    // Validare tip
+    var validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (validTypes.indexOf(file.type) < 0) {
+      return { error: { message: "Tip fișier nepermis. Folosește JPG, PNG sau WEBP." } };
+    }
+
+    // Validare dimensiune (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      return { error: { message: "Fișierul e prea mare (max 5MB)." } };
+    }
+
+    // Generează nume unic: <partener_cod>/<timestamp>-<random>.<ext>
+    var ext = file.name.split('.').pop().toLowerCase();
+    var timestamp = Date.now();
+    var rand = Math.random().toString(36).substring(2, 8);
+    var path = (partenerCod || "general") + "/" + timestamp + "-" + rand + "." + ext;
+
+    // Upload
+    var { data, error } = await sb.storage
+      .from('oferte-imagini')
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) return { error: error };
+
+    // Obține URL public
+    var { data: urlData } = sb.storage
+      .from('oferte-imagini')
+      .getPublicUrl(data.path);
+
+    return { data: { path: data.path, url: urlData.publicUrl } };
+  },
+
+  // Ștergere imagine ofertă din Storage
+  async deleteOfertaImage(imageUrl) {
+    if (!imageUrl) return { error: null };
+
+    // Extrage path-ul din URL
+    // URL format: https://xxx.supabase.co/storage/v1/object/public/oferte-imagini/<path>
+    var match = imageUrl.match(/oferte-imagini\/(.+)$/);
+    if (!match) return { error: { message: "URL invalid pentru imagine." } };
+
+    var path = match[1];
+    return await sb.storage.from('oferte-imagini').remove([path]);
   },
 
   // ─── Tranzacții pacient ───
@@ -397,17 +479,6 @@ window.Clinica = {
   async toggleUserReceptionerActiv(id, activ) {
     return await sb.from("useri_receptioner").update({ activ: activ }).eq("id", id).select().single();
   },
-  async listParteneri() {
-    var { data, error } = await sb
-      .from("parteneri")
-      .select("*")
-      .eq("activ", true)
-      .order("denumire");
-    return { data, error };
-  },
-  async createPartener(payload) {
-    return await sb.from("parteneri").insert(payload).select().single();
-  },
 
   // ─── Tranzacții ───
   // Partenerul logat creează tranzacția — partener_id vine din contul logat
@@ -454,6 +525,11 @@ window.Clinica = {
     var d = new Date(iso);
     return d.toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" }) +
       " " + d.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
+  },
+  formatDateOnly(iso) {
+    if (!iso) return "—";
+    var d = new Date(iso);
+    return d.toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" });
   },
   generateTxRef() {
     var d = new Date();

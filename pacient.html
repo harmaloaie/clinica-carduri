@@ -153,16 +153,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(
   height: 100% !important;
   display: block;
 }
-.card-hero .qr-hint {
-  position: absolute;
-  bottom: -22px;
-  right: 0;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: rgba(248,246,241,0.4);
-  text-transform: uppercase;
-}
 
 @media (max-width: 480px) {
   .card-hero { padding: 22px 20px; }
@@ -270,55 +260,155 @@ tbody tr:last-child td { border-bottom: none; }
   margin-bottom: 8px;
 }
 
-/* Oferte */
+/* ═══════ OFERTE — Cards mari ═══════ */
 .oferte-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
 }
-.oferta {
+.oferta-big {
   background: white;
   border: 1px solid rgba(15,17,23,0.12);
   border-radius: var(--radius);
-  padding: 24px 22px;
-  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   transition: all 0.2s;
-  border-left: 4px solid var(--green);
 }
-.oferta:hover {
+.oferta-big:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px -8px rgba(15,17,23,0.18);
+  box-shadow: 0 12px 28px -10px rgba(15,17,23,0.2);
 }
-.oferta h3 {
+.oferta-big .img-wrap {
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: var(--cream);
+  position: relative;
+  overflow: hidden;
+}
+.oferta-big .img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.oferta-big .img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--cream), white);
+  color: rgba(15,17,23,0.3);
   font-family: 'DM Serif Display', serif;
-  font-size: 22px;
-  margin-bottom: 8px;
+  font-style: italic;
+  font-size: 18px;
+}
+.oferta-big .partener-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(15,17,23,0.85);
+  color: white;
+  padding: 5px 10px;
+  border-radius: var(--radius);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+}
+.oferta-big .reducere-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--accent);
+  color: white;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  font-style: italic;
   letter-spacing: -0.01em;
 }
-.oferta p {
+.oferta-big .body {
+  padding: 22px 22px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.oferta-big h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.oferta-big .descriere {
   font-size: 13px;
   color: rgba(15,17,23,0.65);
   line-height: 1.55;
   margin-bottom: 16px;
 }
-.oferta .meta {
+.oferta-big .preturi {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.oferta-big .pret-redus {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.oferta-big .pret-normal {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: rgba(15,17,23,0.5);
+  text-decoration: line-through;
+}
+.oferta-big .meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(15,17,23,0.55);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(15,17,23,0.08);
+  border-bottom: 1px solid rgba(15,17,23,0.08);
+}
+.oferta-big .meta .ico {
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--green);
+}
+.oferta-big .detalii {
+  background: var(--cream);
+  border-left: 3px solid var(--gold);
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  margin-top: auto;
+  font-size: 13px;
+  color: rgba(15,17,23,0.8);
+  line-height: 1.5;
+}
+.oferta-big .detalii-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  letter-spacing: 0.1em;
-  color: rgba(15,17,23,0.45);
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-}
-.oferta .link {
-  display: inline-block;
-  margin-top: 14px;
-  font-size: 12px;
+  color: var(--gold);
   font-weight: 700;
-  color: var(--green);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  text-decoration: none;
+  margin-bottom: 6px;
+  display: block;
 }
-.oferta .link:hover { text-decoration: underline; }
 
 /* Profil */
 .profile-grid {
@@ -387,28 +477,15 @@ tbody tr:last-child td { border-bottom: none; }
 
   .wrap { padding: 18px 14px 50px; }
 
-  /* Card hero - mai compact */
-  .card-hero {
-    padding: 26px 22px;
-    margin-bottom: 22px;
-  }
-  .card-hero .name {
-    font-size: 30px;
-    margin-bottom: 22px;
-  }
+  .card-hero { padding: 26px 22px; margin-bottom: 22px; }
+  .card-hero .name { font-size: 30px; margin-bottom: 22px; }
   .card-hero .discount-pct { font-size: 50px; }
-  .card-hero .discount-row { padding-top: 18px; }
 
-  /* KPIs - 2 pe rând */
-  .kpis {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
+  .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
   .kpi { padding: 14px 14px; }
   .kpi .lbl { font-size: 9px; }
   .kpi .val { font-size: 22px; }
 
-  /* Tabs scrollable */
   .tabs {
     overflow-x: auto;
     flex-wrap: nowrap;
@@ -461,6 +538,8 @@ tbody tr:last-child td { border-bottom: none; }
 
   /* Oferte grid - 1 col */
   .oferte-grid { grid-template-columns: 1fr; }
+  .oferta-big h3 { font-size: 20px; }
+  .oferta-big .pret-redus { font-size: 28px; }
 
   /* Profile - 1 col */
   .profile-grid { grid-template-columns: 1fr; }
@@ -589,10 +668,8 @@ var allTx = [];
   pacientProfile = await Clinica.requirePacient();
   if (!pacientProfile) return;
 
-  // Update topbar
   document.getElementById("userEmail").textContent = pacientProfile.email || "—";
 
-  // Update card hero
   document.getElementById("cardName").textContent =
     (pacientProfile.prenume || "") + " " + (pacientProfile.nume || "");
   document.getElementById("cardDiscount").textContent = pacientProfile.discount_pct + "%";
@@ -605,10 +682,8 @@ var allTx = [];
     document.getElementById("cardNivel").style.display = "none";
   }
 
-  // Generează QR pentru card (folosind librăria locală qrcode-generator)
   generateCardQR(pacientProfile.cod_card);
 
-  // Update profil tab
   document.getElementById("pNume").textContent =
     (pacientProfile.prenume || "") + " " + (pacientProfile.nume || "");
   document.getElementById("pEmail").textContent = pacientProfile.email || "—";
@@ -620,7 +695,6 @@ var allTx = [];
 
   if (!pacientProfile.telefon) document.getElementById("pTelefon").classList.add("empty");
 
-  // Logout
   document.getElementById("logoutBtn").addEventListener("click", async function() {
     await Clinica.signOut();
     window.location.href = "index.html";
@@ -629,28 +703,24 @@ var allTx = [];
   await loadIstoric();
 })();
 
-// Generează QR pentru cardul pacientului — URL direct la card.html
 function generateCardQR(codCard) {
   if (!codCard) return;
   var canvas = document.getElementById("cardQR");
   if (!canvas) return;
 
-  // Așteaptă ca librăria să fie încărcată
   if (typeof qrcode === 'undefined') {
     setTimeout(function() { generateCardQR(codCard); }, 200);
     return;
   }
 
   try {
-    // URL pentru recepționer (direct la card.html cu ID)
     var url = window.location.origin + "/card.html?id=" + encodeURIComponent(codCard);
-
     var qr = qrcode(0, 'M');
     qr.addData(url);
     qr.make();
 
     var moduleCount = qr.getModuleCount();
-    var size = 240; // High DPI render — afișarea CSS îl scalează
+    var size = 240;
     var margin = 2;
     var totalModules = moduleCount + (margin * 2);
     var moduleSize = size / totalModules;
@@ -659,11 +729,9 @@ function generateCardQR(codCard) {
     canvas.height = size;
     var ctx = canvas.getContext('2d');
 
-    // Background alb
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, size, size);
 
-    // Module negre
     ctx.fillStyle = '#000000';
     for (var row = 0; row < moduleCount; row++) {
       for (var col = 0; col < moduleCount; col++) {
@@ -693,7 +761,6 @@ async function loadIstoric() {
 
   allTx = data || [];
 
-  // KPIs
   var totalPlatit = 0, totalEcon = 0;
   allTx.forEach(function(t) {
     if (t.status === "anulat") return;
@@ -704,7 +771,6 @@ async function loadIstoric() {
   document.getElementById("kTotalPlatit").textContent = Clinica.formatRON(totalPlatit);
   document.getElementById("kTotalEconomie").textContent = Clinica.formatRON(totalEcon);
 
-  // Tabel
   var tbody = document.getElementById("istoricTbody");
   document.getElementById("istoricWrap").style.display = "block";
 
@@ -728,12 +794,15 @@ async function loadIstoric() {
   }).join("");
 }
 
+// ═══════════════════════════════════════════════════════════════
+// OFERTE — Card mare cu tot vizibil
+// ═══════════════════════════════════════════════════════════════
 async function loadOferte() {
   document.getElementById("loadingOferte").style.display = "flex";
   var container = document.getElementById("oferteContainer");
   container.innerHTML = "";
 
-  var { data, error } = await Clinica.listOferteActive();
+  var { data, error } = await Clinica.listOferteActiveClient();
   document.getElementById("loadingOferte").style.display = "none";
 
   if (error) {
@@ -743,17 +812,48 @@ async function loadOferte() {
   }
 
   if (!data || !data.length) {
-    container.innerHTML = '<div class="empty"><h3>Fără oferte active</h3>Verifică din când în când pentru oferte noi.</div>';
+    container.innerHTML = '<div class="empty"><h3>Fără oferte active</h3>Verifică din când în când pentru oferte noi de la partenerii noștri.</div>';
     return;
   }
 
   var html = '<div class="oferte-grid">';
   data.forEach(function(o) {
-    html += '<div class="oferta">' +
-      '<h3>' + Clinica.escapeHtml(o.titlu) + '</h3>' +
-      (o.descriere ? '<p>' + Clinica.escapeHtml(o.descriere) + '</p>' : '') +
-      (o.data_sfarsit ? '<div class="meta">Valabil până la ' + Clinica.escapeHtml(o.data_sfarsit) + '</div>' : '') +
-      (o.link_extern ? '<a href="' + Clinica.escapeHtml(o.link_extern) + '" target="_blank" rel="noopener" class="link">Detalii →</a>' : '') +
+    var partener = o.parteneri || {};
+    var partenerNume = partener.denumire || "Partener";
+
+    var reducerePct = "";
+    if (o.pret_normal && o.pret_redus && parseFloat(o.pret_normal) > parseFloat(o.pret_redus)) {
+      var pct = Math.round((1 - parseFloat(o.pret_redus) / parseFloat(o.pret_normal)) * 100);
+      reducerePct = '<div class="reducere-badge">−' + pct + '%</div>';
+    }
+
+    var validitate = "";
+    if (o.data_sfarsit) {
+      validitate = '<div class="meta"><span class="ico">⏱</span>Valabil până la <strong>' + Clinica.escapeHtml(Clinica.formatDateOnly(o.data_sfarsit)) + '</strong></div>';
+    }
+
+    html += '<div class="oferta-big">' +
+      '<div class="img-wrap">' +
+        '<div class="partener-badge">' + Clinica.escapeHtml(partenerNume) + '</div>' +
+        reducerePct +
+        (o.imagine_url ?
+          '<img src="' + Clinica.escapeHtml(o.imagine_url) + '" alt="' + Clinica.escapeHtml(o.titlu) + '">' :
+          '<div class="img-placeholder">' + Clinica.escapeHtml(o.titlu.substring(0, 30)) + '</div>') +
+      '</div>' +
+      '<div class="body">' +
+        '<h3>' + Clinica.escapeHtml(o.titlu) + '</h3>' +
+        (o.descriere ? '<div class="descriere">' + Clinica.escapeHtml(o.descriere) + '</div>' : '') +
+        '<div class="preturi">' +
+          '<div class="pret-redus">' + Clinica.formatRON(o.pret_redus || 0) + '</div>' +
+          (o.pret_normal ? '<div class="pret-normal">' + Clinica.formatRON(o.pret_normal) + '</div>' : '') +
+        '</div>' +
+        validitate +
+        (o.detalii ?
+          '<div class="detalii">' +
+            '<span class="detalii-label">Cum se obține</span>' +
+            Clinica.escapeHtml(o.detalii) +
+          '</div>' : '') +
+      '</div>' +
     '</div>';
   });
   html += '</div>';
@@ -779,26 +879,20 @@ document.querySelectorAll(".tab").forEach(function(t) {
 
 <!-- ═══════ PWA: Service Worker + Install Prompt ═══════ -->
 <script>
-// 1. Înregistrează service worker cu auto-update
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('service-worker.js')
       .then(function(reg) {
         console.log('[PWA] Service Worker înregistrat');
-
-        // Verifică update-uri imediat
         reg.update();
-
-        // Verifică update-uri la fiecare 60 secunde
         setInterval(function() { reg.update(); }, 60000);
 
-        // Detectează când un SW nou e găsit
         reg.addEventListener('updatefound', function() {
           var newWorker = reg.installing;
           if (!newWorker) return;
           newWorker.addEventListener('statechange', function() {
             if (newWorker.state === 'activated') {
-              console.log('[PWA] Versiune nouă activată, reîncarcă pagina');
+              console.log('[PWA] Versiune nouă activată');
             }
           });
         });
@@ -807,27 +901,23 @@ if ('serviceWorker' in navigator) {
         console.warn('[PWA] Service Worker eșuat:', err);
       });
 
-    // Asculţă mesaje de la SW (auto-refresh după update)
     var hasReloaded = false;
     navigator.serviceWorker.addEventListener('message', function(ev) {
       if (ev.data && ev.data.type === 'SW_UPDATED' && !hasReloaded) {
         hasReloaded = true;
         console.log('[PWA] Reîncarcă pagina pentru versiunea nouă');
-        // Refresh silent — utilizatorul vede pagina re-încărcată cu cod nou
         setTimeout(function() { window.location.reload(); }, 500);
       }
     });
   });
 }
 
-// 2. Detectare iOS pentru a afișa instrucțiuni Add to Home Screen
 (function() {
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   var isInStandaloneMode = ('standalone' in window.navigator) && window.navigator.standalone;
   var isAlreadyDismissed = localStorage.getItem('pwa-ios-dismissed') === 'true';
 
   if (isIOS && !isInStandaloneMode && !isAlreadyDismissed) {
-    // Afișează banner pentru iOS după 3 secunde
     setTimeout(function() {
       var banner = document.createElement('div');
       banner.id = 'iosInstallBanner';
@@ -853,13 +943,11 @@ if ('serviceWorker' in navigator) {
   }
 })();
 
-// 3. Detectare Android Chrome pentru install prompt nativ
 var deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
   deferredPrompt = e;
 
-  // Afișează buton de install în topbar (sau alt loc)
   var installBtn = document.createElement('button');
   installBtn.id = 'androidInstallBtn';
   installBtn.innerHTML = '📲 Instalează app';
@@ -877,7 +965,6 @@ window.addEventListener('beforeinstallprompt', function(e) {
   });
 });
 
-// 4. App-ul e deja instalat
 window.addEventListener('appinstalled', function() {
   console.log('[PWA] App instalat cu succes');
   var btn = document.getElementById('androidInstallBtn');
