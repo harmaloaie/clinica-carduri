@@ -826,22 +826,24 @@ tbody tr:last-child td { border-bottom: none; }
   </div>
 </div>
 
-<!-- Modal: programare nouă (placeholder pentru Calendly) -->
+<!-- Modal: programare nouă (Calendly inline embed) -->
 <div class="modal-bg" id="modalProgNoua">
-  <div class="modal-card">
+  <div class="modal-card" style="max-width:760px;width:96%;padding:18px">
     <button class="modal-close-x" onclick="closeProgNouaModal()">&times;</button>
-    <h3>Programare nouă</h3>
-    <div class="modal-sub">Alege ziua și ora care îți convine pe Calendly. Programarea va apărea aici imediat.</div>
-    <div style="margin-top:20px;padding:24px;background:white;border:1.5px dashed rgba(15,17,23,0.18);border-radius:2px;text-align:center">
-      <div style="font-size:36px;margin-bottom:12px">📅</div>
-      <div style="font-size:13px;color:rgba(15,17,23,0.7);margin-bottom:18px;line-height:1.55">
-        Sistemul de programare online va fi disponibil în curând.<br>
-        Până atunci, te rugăm să suni la <strong>0772 148 148</strong> pentru a-ți face programare.
-      </div>
-      <a href="tel:0772148148" class="prog-cta-btn" style="text-decoration:none">📞 Sună 0772 148 148</a>
+    <h3 style="padding-right:30px">Programare nouă</h3>
+    <div class="modal-sub">Alege ziua și ora care îți convine. Programarea va apărea aici după ce confirmi.</div>
+    <!-- Calendly inline widget container (populated when modal opens) -->
+    <div id="calendlyEmbed" style="min-width:320px;height:680px;margin-top:14px"></div>
+    <div id="calendlyFallback" style="margin-top:14px;padding:14px;background:rgba(184,151,58,0.06);border:1px solid rgba(184,151,58,0.25);border-radius:2px;text-align:center;font-size:12px;color:rgba(15,17,23,0.65);display:none">
+      Nu se încarcă widget-ul de programare? Click aici:
+      <a id="calendlyDirectLink" href="https://calendly.com/clinicacentralpitesti/recoltare-analize" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:2px;text-decoration:none;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;font-weight:600">Deschide Calendly</a>
     </div>
   </div>
 </div>
+
+<!-- Calendly script (loaded once) -->
+<link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
+<script src="https://assets.calendly.com/assets/external/widget.js" async></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared/qrcode-lib.js"></script>
@@ -1368,11 +1370,81 @@ async function handleBiletUpload(ev) {
 
 function closeProgNouaModal() {
   document.getElementById("modalProgNoua").classList.remove("show");
+  // Clear embed to avoid duplicate iframes if reopened
+  var embedEl = document.getElementById("calendlyEmbed");
+  if (embedEl) embedEl.innerHTML = "";
+}
+
+// ─── Calendly inline widget ───
+var CALENDLY_EVENT_URL = "https://calendly.com/clinicacentralpitesti/recoltare-analize";
+var calendlyMessageListenerAttached = false;
+
+function openCalendlyEmbed() {
+  var embedEl = document.getElementById("calendlyEmbed");
+  var fallbackEl = document.getElementById("calendlyFallback");
+  if (!embedEl) return;
+  embedEl.innerHTML = ""; // reset
+
+  // Wait until Calendly script is ready
+  var tries = 0;
+  function tryInit() {
+    tries++;
+    if (window.Calendly && typeof window.Calendly.initInlineWidget === "function") {
+      // Prefill from pacientProfile
+      var prefill = {};
+      if (pacientProfile) {
+        var fullName = ((pacientProfile.prenume || "") + " " + (pacientProfile.nume || "")).trim();
+        if (fullName) prefill.name = fullName;
+        if (pacientProfile.email) prefill.email = pacientProfile.email;
+        // Custom answers (must match Calendly question order: a1=telefon, a2=cod card, a3=cnp)
+        var customAnswers = {};
+        if (pacientProfile.telefon) customAnswers.a1 = pacientProfile.telefon;
+        if (pacientProfile.cod_card) customAnswers.a2 = pacientProfile.cod_card;
+        if (pacientProfile.cnp) customAnswers.a3 = pacientProfile.cnp;
+        if (Object.keys(customAnswers).length) prefill.customAnswers = customAnswers;
+      }
+      try {
+        window.Calendly.initInlineWidget({
+          url: CALENDLY_EVENT_URL + "?hide_gdpr_banner=1&primary_color=1a6b3c",
+          parentElement: embedEl,
+          prefill: prefill
+        });
+        if (fallbackEl) fallbackEl.style.display = "none";
+      } catch (e) {
+        console.warn("[calendly] init failed:", e);
+        if (fallbackEl) fallbackEl.style.display = "block";
+      }
+    } else if (tries < 30) {
+      setTimeout(tryInit, 200);
+    } else {
+      // Calendly script didn't load — show fallback link
+      if (fallbackEl) fallbackEl.style.display = "block";
+    }
+  }
+  tryInit();
+
+  // Listen for Calendly booking confirmation (postMessage event)
+  if (!calendlyMessageListenerAttached) {
+    calendlyMessageListenerAttached = true;
+    window.addEventListener("message", function(ev) {
+      if (!ev.data || typeof ev.data !== "object") return;
+      if (ev.data.event === "calendly.event_scheduled") {
+        console.log("[calendly] event scheduled, refresh list in ~3s");
+        showToast("Programare confirmată! Se actualizează lista...");
+        // Calendly webhook needs a moment to hit our Edge Function + DB insert
+        setTimeout(function() {
+          closeProgNouaModal();
+          loadProgramari();
+        }, 3000);
+      }
+    });
+  }
 }
 
 // Wire up buttons
 document.getElementById("btnProgNoua").addEventListener("click", function() {
   document.getElementById("modalProgNoua").classList.add("show");
+  openCalendlyEmbed();
 });
 
 // Close modals on outside click
