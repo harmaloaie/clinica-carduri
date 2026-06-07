@@ -2097,16 +2097,17 @@ async function savePostBookingChoices() {
 
       var nume = (pacientProfile.nume || "").trim();
       var prenume = (pacientProfile.prenume || "").trim();
+      var emailLower = (pacientProfile.email || "").toLowerCase().trim();
 
       var payload = {
         pacient_prenume: prenume,
         pacient_nume: nume,
         cnp_pacient: pacientProfile.cnp || null,
-        pacient_email: pacientProfile.email || null,
+        pacient_email: emailLower || null,
         pacient_telefon_prefix: pacientProfile.telefon ? "+40" : null,
         pacient_telefon_numar: pacientProfile.telefon ? String(pacientProfile.telefon).replace(/[\s\-\.]/g, "").replace(/^(\+40|0040|0)/, "") : null,
         user_id: null,
-        user_email: pacientProfile.email || null,
+        user_email: emailLower || null,
         numar_analize: items.length,
         numar_laboratoare: groups.length,
         numar_eprubete: 0,
@@ -2124,6 +2125,14 @@ async function savePostBookingChoices() {
       var insertRes = await sb.from("cc_cereri").insert([payload]).select().single();
       if (insertRes.error) {
         console.error("[postbook] cerere insert error:", insertRes.error);
+        console.error("[postbook] payload sent:", payload);
+        // Try to get session user email for debugging
+        try {
+          var sessRes = await sb.auth.getSession();
+          var sessionEmail = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.user && sessRes.data.session.user.email;
+          console.error("[postbook] auth session email:", sessionEmail);
+          console.error("[postbook] payload user_email:", payload.user_email);
+        } catch (e) {}
         throw new Error(insertRes.error.message);
       }
 
