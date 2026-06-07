@@ -1453,11 +1453,57 @@ async function openProgModal(id) {
     html += '</div>';
   }
 
+  // "Adauga analize" button - opens post-booking modal pentru aceasta programare (oricand)
+  if (p.status !== "cancelled" && p.status !== "completed") {
+    var btnLabel = p.cerere_id ? "🧪 Vezi/editează analizele" : "🧪 Adaugă analize manual";
+    html += '<div style="margin-top:14px;text-align:center">';
+    html += '<button class="bilet-btn primary" style="width:100%" onclick="openPostBookingFromDetail(' + p.id + ')">' + btnLabel + '</button>';
+    html += '</div>';
+  }
+
   body.innerHTML = html;
   document.getElementById("modalProg").classList.add("show");
 
   // Load bilet preview if exists
   if (p.bilet_url) loadBiletPreview(p);
+}
+
+// Open post-booking modal from the detail modal (re-entry point)
+function openPostBookingFromDetail(progId) {
+  // Close detail modal first
+  closeProgModal();
+  // Set programare directly (no inviteeUri needed since we pass programareId explicitly)
+  postBookState.inviteeUri = null;
+  postBookState.programareId = progId;
+  postBookState.selectedAnalize = [];
+  postBookState.biletUploaded = false;
+
+  // Reset UI
+  document.getElementById("postBookBiletStatus").innerHTML = "";
+  document.getElementById("analizeSearchInput").value = "";
+  document.getElementById("analizeSuggestions").classList.remove("show");
+  renderAnalizeTags();
+  updatePostBookTotal();
+
+  var prog = programariList.find(function(x) { return x.id === progId; });
+  if (prog) {
+    document.getElementById("postBookSub").textContent =
+      "Programare pe " + progFmtDate(prog.data_programare) + " la " + progFmtTime(prog.data_programare) + ":";
+    // If bilet already exists, show it as done
+    if (prog.bilet_url) {
+      postBookState.biletUploaded = true;
+      document.getElementById("postBookBiletStatus").innerHTML =
+        '<div style="padding:10px;background:rgba(26,107,60,0.1);border:1px solid rgba(26,107,60,0.3);border-radius:2px;font-size:12px;color:#155a32">' +
+        '✓ Bilet deja urcat: <strong>' + progEsc(prog.bilet_filename || "fișier") + '</strong></div>';
+    }
+  }
+
+  // Load CC catalog
+  if (!postBookState.catalogLoaded) {
+    loadCcCatalog();
+  }
+
+  document.getElementById("modalPostBooking").classList.add("show");
 }
 
 function closeProgModal() {
@@ -1751,10 +1797,36 @@ function searchCatalog(query) {
 
 function renderSuggestions(items) {
   var box = document.getElementById("analizeSuggestions");
+  var currentQuery = document.getElementById("analizeSearchInput").value.trim();
   if (!items.length) {
-    box.innerHTML = '<div class="sugg-empty">Nicio analiză găsită. Încearcă alte cuvinte.</div>';
+    // Fallback: nu e in catalog → afiseaza buton "Adauga manual"
+    box.innerHTML =
+      '<div class="sugg-empty" style="text-align:left;padding:14px">' +
+        '<div style="font-size:12px;color:rgba(15,17,23,0.7);margin-bottom:10px">' +
+          'Nu am găsit „<strong>' + progEsc(currentQuery) + '</strong>" în catalogul nostru.' +
+        '</div>' +
+        '<button type="button" id="btnAddManualAnaliza" style="' +
+          'background:var(--ink);color:var(--paper);border:none;' +
+          'padding:9px 14px;border-radius:var(--radius);font-family:inherit;' +
+          'font-size:12px;font-weight:700;letter-spacing:0.04em;cursor:pointer;width:100%' +
+        '">+ Adaugă „' + progEsc(currentQuery) + '" manual</button>' +
+        '<div style="font-size:10px;color:rgba(15,17,23,0.5);margin-top:8px;text-align:center">' +
+          'Adminul îți va estima prețul când vii la clinică' +
+        '</div>' +
+      '</div>';
     box.classList.add("show");
     postBookState.highlightedIdx = -1;
+    // Hook up buton
+    var btn = document.getElementById("btnAddManualAnaliza");
+    if (btn) {
+      btn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        addManualAnaliza(currentQuery);
+      });
+      // Prevent blur from hiding box while user reaches for button
+      btn.addEventListener("mousedown", function(e) { e.preventDefault(); });
+    }
     return;
   }
   var html = "";
@@ -1777,6 +1849,25 @@ function renderSuggestions(items) {
       if (item) selectAnaliza(item);
     });
   }
+}
+
+// Adauga analiza manual (cand nu e in catalog)
+function addManualAnaliza(name) {
+  var clean = String(name || "").trim();
+  if (!clean) return;
+  // Use negative id (timestamp-based) to avoid clash with real cc_preturi ids
+  var manualId = -Date.now();
+  postBookState.selectedAnalize.push({
+    id: manualId,
+    denumire: clean,
+    pret: 0,
+    manual: true
+  });
+  document.getElementById("analizeSearchInput").value = "";
+  document.getElementById("analizeSuggestions").classList.remove("show");
+  renderAnalizeTags();
+  updatePostBookTotal();
+  document.getElementById("analizeSearchInput").focus();
 }
 
 function selectAnaliza(item) {
@@ -1810,9 +1901,11 @@ function renderAnalizeTags() {
   var html = "";
   for (var i = 0; i < postBookState.selectedAnalize.length; i++) {
     var a = postBookState.selectedAnalize[i];
-    html += '<span class="analize-tag" data-id="' + a.id + '">';
+    var priceLabel = a.manual ? 'preț la clinică' : (Math.round(a.pret) + ' RON');
+    var tagStyle = a.manual ? ' style="background:rgba(184,151,58,0.12);border-color:rgba(184,151,58,0.4);color:#7a5e1e"' : '';
+    html += '<span class="analize-tag" data-id="' + a.id + '"' + tagStyle + '>';
     html += progEsc(a.denumire);
-    html += '<span class="price">' + Math.round(a.pret) + ' RON</span>';
+    html += '<span class="price">' + priceLabel + '</span>';
     html += '<button onclick="removeAnaliza(' + a.id + ')" title="Elimină">&times;</button>';
     html += '</span>';
   }
@@ -1964,26 +2057,43 @@ async function savePostBookingChoices() {
       var items = postBookState.selectedAnalize.map(function(a) {
         return {
           denumire: a.denumire,
-          laborator: "Clinica Central",
-          pret_lista: a.pret,
-          pret_final: a.pret,
+          laborator: a.manual ? "—" : "Clinica Central",
+          pret_lista: Number(a.pret) || 0,
+          pret_final: Number(a.pret) || 0,
           discount: 0,
           timp: null,
           categorie: null,
-          detalii: null
+          detalii: a.manual ? "Adăugat manual de pacient" : null
         };
       });
       var totalLista = items.reduce(function(s, i) { return s + Number(i.pret_lista); }, 0);
       var totalFinal = totalLista;
 
-      // Build groups by lab (here just 1 lab = "Clinica Central")
-      var groups = [{
-        laborator: "Clinica Central",
-        numar_analize: items.length,
-        subtotal_lista: totalLista,
-        subtotal_final: totalFinal,
-        economie: 0
-      }];
+      // Build groups by lab — if any manual, group as "—", else "Clinica Central"
+      var hasManual = postBookState.selectedAnalize.some(function(a) { return a.manual; });
+      var hasCatalog = postBookState.selectedAnalize.some(function(a) { return !a.manual; });
+      var groups = [];
+      if (hasCatalog) {
+        var ccItems = items.filter(function(it) { return it.laborator === "Clinica Central"; });
+        var ccSubtotal = ccItems.reduce(function(s, i) { return s + Number(i.pret_lista); }, 0);
+        groups.push({
+          laborator: "Clinica Central",
+          numar_analize: ccItems.length,
+          subtotal_lista: ccSubtotal,
+          subtotal_final: ccSubtotal,
+          economie: 0
+        });
+      }
+      if (hasManual) {
+        var manualItems = items.filter(function(it) { return it.laborator === "—"; });
+        groups.push({
+          laborator: "—",
+          numar_analize: manualItems.length,
+          subtotal_lista: 0,
+          subtotal_final: 0,
+          economie: 0
+        });
+      }
 
       var nume = (pacientProfile.nume || "").trim();
       var prenume = (pacientProfile.prenume || "").trim();
@@ -1998,7 +2108,7 @@ async function savePostBookingChoices() {
         user_id: null,
         user_email: pacientProfile.email || null,
         numar_analize: items.length,
-        numar_laboratoare: 1,
+        numar_laboratoare: groups.length,
         numar_eprubete: 0,
         total_lista_ron: Math.round(totalLista * 100) / 100,
         total_final_ron: Math.round(totalFinal * 100) / 100,
