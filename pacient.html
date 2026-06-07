@@ -1255,15 +1255,19 @@ document.querySelectorAll(".tab").forEach(function(t) {
 // ════════════════════════════════════════════════════════════════
 
 // Use the same supabase client that's already initialized in shared/
-// (works because shared/supabase-client.js creates a global supabase instance)
+// (shared/supabase-client.js creates window.sb with the patient's session)
 function getSb() {
-  // Try various namespace patterns
+  // PRIORITY: use the global window.sb (initialized by shared/supabase-client.js)
+  // This is the SAME client that has the patient's authenticated session
+  if (window.sb) return window.sb;
+  // Fallback patterns (legacy)
   if (window.Clinica && window.Clinica.sb) return window.Clinica.sb;
   if (window.Clinica && window.Clinica._sb) return window.Clinica._sb;
   if (window.supabaseClient) return window.supabaseClient;
-  // Fallback: create a new client - it will pick up session from localStorage
+  // Last resort: create new client (will warn "Multiple GoTrueClient instances")
   if (window.CLINICA_CONFIG && window.supabase) {
     if (!window.__progSb) {
+      console.warn("[Programari] Creez client Supabase suplimentar - sesiunea poate fi pierduta!");
       window.__progSb = window.supabase.createClient(
         window.CLINICA_CONFIG.SUPABASE_URL,
         window.CLINICA_CONFIG.SUPABASE_ANON_KEY
