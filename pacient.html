@@ -2126,26 +2126,58 @@ async function savePostBookingChoices() {
         programare_id: postBookState.programareId
       };
 
-      var insertRes = await sb.from("cc_cereri").insert([payload]).select().single();
-      if (insertRes.error) {
-        console.error("[postbook] cerere insert error:", insertRes.error);
-        console.error("[postbook] payload sent:", payload);
-        // Try to get session user email for debugging
-        try {
-          var sessRes = await sb.auth.getSession();
-          var sessionEmail = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.user && sessRes.data.session.user.email;
-          console.error("[postbook] auth session email:", sessionEmail);
-          console.error("[postbook] payload user_email:", payload.user_email);
-        } catch (e) {}
-        throw new Error(insertRes.error.message);
+      // Force fresh token + use raw fetch to GUARANTEE Authorization header
+      var sessRes = await sb.auth.getSession();
+      var accessToken = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token;
+      var sessionEmail = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.user && sessRes.data.session.user.email;
+      console.log("[postbook] session email:", sessionEmail, "| token present:", !!accessToken);
+
+      if (!accessToken) {
+        throw new Error("Sesiune expirată — te rog reloghează-te pe Carduri (refresh pagina + login din nou).");
       }
 
-      var newCerereId = insertRes.data.id;
+      var supaUrl = window.CLINICA_CONFIG.SUPABASE_URL;
+      var anonKey = window.CLINICA_CONFIG.SUPABASE_ANON_KEY;
 
-      // Link la programare + update status la ocr_processed (avem cerere pending acum)
-      await sb.from("cc_programari")
-        .update({ cerere_id: newCerereId, status: postBookState.biletUploaded ? "bilet_uploaded" : "ocr_processed" })
-        .eq("id", postBookState.programareId);
+      // RAW fetch with explicit Bearer token
+      var insertResp = await fetch(supaUrl + "/rest/v1/cc_cereri", {
+        method: "POST",
+        headers: {
+          "apikey": anonKey,
+          "Authorization": "Bearer " + accessToken,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!insertResp.ok) {
+        var errText = await insertResp.text();
+        console.error("[postbook] HTTP", insertResp.status, errText);
+        console.error("[postbook] payload sent:", payload);
+        throw new Error("HTTP " + insertResp.status + ": " + errText.substring(0, 300));
+      }
+
+      var insertData = await insertResp.json();
+      var newCerereId = Array.isArray(insertData) ? insertData[0].id : insertData.id;
+      console.log("[postbook] cerere created with id:", newCerereId);
+
+      // Update programare cu cerere_id + status (raw fetch with token)
+      var newStatus = postBookState.biletUploaded ? "bilet_uploaded" : "ocr_processed";
+      var updResp = await fetch(supaUrl + "/rest/v1/cc_programari?id=eq." + postBookState.programareId, {
+        method: "PATCH",
+        headers: {
+          "apikey": anonKey,
+          "Authorization": "Bearer " + accessToken,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({ cerere_id: newCerereId, status: newStatus })
+      });
+      if (!updResp.ok) {
+        var updErrText = await updResp.text();
+        console.warn("[postbook] programare update failed (non-fatal):", updResp.status, updErrText);
+      }
 
       showToast("Am salvat " + items.length + " analiză(e). Adminul va vedea cererea ta.");
     } else if (postBookState.biletUploaded) {
