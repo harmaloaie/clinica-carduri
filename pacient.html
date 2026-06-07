@@ -550,6 +550,151 @@ tbody tr:last-child td { border-bottom: none; }
   .card-hero .name { font-size: 26px; }
   .card-hero .discount-pct { font-size: 44px; }
 }
+
+/* ─── PROGRAMARI MELE ─── */
+.prog-header-action {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+}
+.prog-cta-btn {
+  background: var(--green); color: white;
+  border: none; padding: 12px 18px; border-radius: var(--radius);
+  font-family: inherit; font-weight: 700; font-size: 13px;
+  letter-spacing: 0.04em; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background 0.15s;
+}
+.prog-cta-btn:hover { background: #155a32; }
+.prog-cta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.prog-list { display: flex; flex-direction: column; gap: 12px; }
+
+.prog-row {
+  background: white; border: 1.5px solid rgba(15,17,23,0.08);
+  border-radius: var(--radius); padding: 16px;
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: 16px; align-items: center;
+}
+.prog-row.with-bilet { border-left: 4px solid var(--gold); }
+.prog-row.completed { border-left: 4px solid var(--green); opacity: 0.78; }
+.prog-row.cancelled { opacity: 0.45; }
+
+.prog-row-date {
+  background: var(--ink); color: var(--paper);
+  border-radius: var(--radius); padding: 8px 12px;
+  text-align: center; min-width: 70px;
+}
+.prog-row-date .d { font-size: 22px; font-weight: 700; color: var(--gold); line-height: 1; }
+.prog-row-date .m { font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; margin-top: 3px; opacity: 0.7; }
+.prog-row-date .t { font-size: 10px; margin-top: 5px; opacity: 0.65; font-weight: 600; }
+
+.prog-row-info { min-width: 0; }
+.prog-row-info h4 {
+  font-size: 14px; font-weight: 700; color: var(--ink);
+  margin: 0 0 4px; font-family: inherit;
+}
+.prog-row-info .meta { font-size: 11px; color: rgba(15,17,23,0.55); }
+.prog-row-info .meta span { margin-right: 10px; }
+
+.prog-row-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.7px;
+  text-transform: uppercase; padding: 4px 9px; border-radius: 4px;
+  white-space: nowrap;
+}
+.prog-row-badge.b-sched { background: rgba(15,17,23,0.08); color: var(--ink); }
+.prog-row-badge.b-bilet { background: rgba(184,151,58,0.18); color: #6f5519; }
+.prog-row-badge.b-ocr { background: rgba(26,107,60,0.16); color: #155a32; }
+.prog-row-badge.b-done { background: rgba(26,107,60,0.28); color: #0a3d20; }
+.prog-row-badge.b-cancel { background: rgba(200,57,43,0.16); color: #7a1f15; }
+
+@media (max-width: 640px) {
+  .prog-row { grid-template-columns: 1fr; gap: 10px; }
+  .prog-row-date { width: max-content; }
+}
+
+/* Modal programare */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(15,17,23,0.55);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 20px; z-index: 1000; overflow-y: auto;
+}
+.modal-bg.show { display: flex; }
+.modal-card {
+  background: var(--paper); border-radius: var(--radius);
+  max-width: 540px; width: 100%; padding: 28px 24px;
+  position: relative; margin: auto;
+}
+.modal-card h3 {
+  font-family: 'DM Serif Display', serif; font-size: 22px;
+  margin: 0 0 4px; color: var(--ink);
+}
+.modal-card .modal-sub { font-size: 12px; color: rgba(15,17,23,0.6); margin-bottom: 20px; }
+.modal-close-x {
+  position: absolute; top: 14px; right: 14px;
+  background: none; border: none; font-size: 26px;
+  cursor: pointer; color: rgba(15,17,23,0.5); line-height: 1;
+}
+.modal-detail-row {
+  display: grid; grid-template-columns: 110px 1fr; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid rgba(15,17,23,0.06);
+  font-size: 13px;
+}
+.modal-detail-row:last-of-type { border-bottom: none; }
+.modal-detail-row .lbl { color: rgba(15,17,23,0.55); font-size: 11px; letter-spacing: 0.4px; text-transform: uppercase; }
+.modal-detail-row .val { font-weight: 600; color: var(--ink); }
+
+.bilet-upload-zone {
+  border: 2px dashed rgba(15,17,23,0.18); border-radius: var(--radius);
+  padding: 24px; text-align: center;
+  margin-top: 16px;
+  background: white;
+}
+.bilet-upload-zone p {
+  font-size: 12px; color: rgba(15,17,23,0.55);
+  margin-bottom: 14px; line-height: 1.5;
+}
+.bilet-upload-actions {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
+.bilet-btn {
+  padding: 10px 16px; border-radius: var(--radius);
+  font-family: inherit; font-weight: 600; font-size: 12px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  border: 1.5px solid rgba(15,17,23,0.2); background: white; color: var(--ink);
+  letter-spacing: 0.04em;
+}
+.bilet-btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.bilet-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.bilet-existing {
+  margin-top: 14px;
+  padding: 14px; background: rgba(184,151,58,0.06);
+  border: 1px solid rgba(184,151,58,0.25); border-radius: var(--radius);
+  text-align: center;
+}
+.bilet-existing img { max-width: 100%; max-height: 280px; border-radius: var(--radius); margin-bottom: 10px; }
+.bilet-existing .file-info {
+  font-size: 12px; color: rgba(15,17,23,0.6);
+  margin-bottom: 8px; font-family: 'JetBrains Mono', monospace;
+}
+.bilet-existing a {
+  display: inline-block; padding: 8px 14px;
+  background: var(--ink); color: var(--paper); text-decoration: none;
+  border-radius: var(--radius); font-size: 11px;
+  letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600;
+}
+
+.toast-msg {
+  position: fixed; top: 20px; right: 20px;
+  background: var(--ink); color: var(--paper);
+  padding: 12px 18px; border-radius: var(--radius);
+  font-size: 13px; font-weight: 500; z-index: 2000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  border-left: 4px solid var(--green);
+  max-width: 340px;
+}
+.toast-msg.err { border-left-color: var(--accent); }
+
 </style>
 </head>
 <body>
@@ -590,6 +735,7 @@ tbody tr:last-child td { border-bottom: none; }
   <!-- Tabs -->
   <div class="tabs">
     <button class="tab active" data-tab="istoric">Istoric plăți</button>
+    <button class="tab" data-tab="programari">Programări</button>
     <button class="tab" data-tab="oferte">Oferte</button>
     <button class="tab" data-tab="profil">Profil</button>
   </div>
@@ -612,6 +758,18 @@ tbody tr:last-child td { border-bottom: none; }
         <tbody id="istoricTbody"></tbody>
       </table>
     </div>
+  </section>
+
+  <!-- PROGRAMĂRI -->
+  <section class="tab-panel" id="panel-programari">
+    <div class="prog-header-action">
+      <div style="font-size:13px;color:rgba(15,17,23,0.65);max-width:420px">
+        Programările tale la Clinica Central. După ce faci o programare, poți urca biletul de trimitere de la medicul tău și vom pregăti analizele înainte să ajungi.
+      </div>
+      <button class="prog-cta-btn" id="btnProgNoua">+ Programare nouă</button>
+    </div>
+    <div id="loadingProg" class="loading">Se încarcă programările...</div>
+    <div class="prog-list" id="progList" style="display:none"></div>
   </section>
 
   <!-- OFERTE -->
@@ -655,6 +813,35 @@ tbody tr:last-child td { border-bottom: none; }
   </section>
 
 </main>
+
+<!-- ─── MODALE PROGRAMARI ─── -->
+
+<!-- Modal: detalii programare + upload bilet -->
+<div class="modal-bg" id="modalProg">
+  <div class="modal-card">
+    <button class="modal-close-x" onclick="closeProgModal()">&times;</button>
+    <h3 id="modalProgTitle">Detalii programare</h3>
+    <div class="modal-sub" id="modalProgSub">—</div>
+    <div id="modalProgBody"></div>
+  </div>
+</div>
+
+<!-- Modal: programare nouă (placeholder pentru Calendly) -->
+<div class="modal-bg" id="modalProgNoua">
+  <div class="modal-card">
+    <button class="modal-close-x" onclick="closeProgNouaModal()">&times;</button>
+    <h3>Programare nouă</h3>
+    <div class="modal-sub">Alege ziua și ora care îți convine pe Calendly. Programarea va apărea aici imediat.</div>
+    <div style="margin-top:20px;padding:24px;background:white;border:1.5px dashed rgba(15,17,23,0.18);border-radius:2px;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">📅</div>
+      <div style="font-size:13px;color:rgba(15,17,23,0.7);margin-bottom:18px;line-height:1.55">
+        Sistemul de programare online va fi disponibil în curând.<br>
+        Până atunci, te rugăm să suni la <strong>0772 148 148</strong> pentru a-ți face programare.
+      </div>
+      <a href="tel:0772148148" class="prog-cta-btn" style="text-decoration:none">📞 Sună 0772 148 148</a>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared/qrcode-lib.js"></script>
@@ -862,6 +1049,7 @@ async function loadOferte() {
 
 // Tabs
 var oferteLoaded = false;
+var programariLoaded = false;
 document.querySelectorAll(".tab").forEach(function(t) {
   t.addEventListener("click", function() {
     document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
@@ -873,7 +1061,326 @@ document.querySelectorAll(".tab").forEach(function(t) {
       oferteLoaded = true;
       loadOferte();
     }
+    if (t.dataset.tab === "programari" && !programariLoaded) {
+      programariLoaded = true;
+      loadProgramari();
+    }
   });
+});
+
+// ════════════════════════════════════════════════════════════════
+// PROGRAMARI MELE — patient-side module
+// ════════════════════════════════════════════════════════════════
+
+// Use the same supabase client that's already initialized in shared/
+// (works because shared/supabase-client.js creates a global supabase instance)
+function getSb() {
+  // Try various namespace patterns
+  if (window.Clinica && window.Clinica.sb) return window.Clinica.sb;
+  if (window.Clinica && window.Clinica._sb) return window.Clinica._sb;
+  if (window.supabaseClient) return window.supabaseClient;
+  // Fallback: create a new client - it will pick up session from localStorage
+  if (window.CLINICA_CONFIG && window.supabase) {
+    if (!window.__progSb) {
+      window.__progSb = window.supabase.createClient(
+        window.CLINICA_CONFIG.SUPABASE_URL,
+        window.CLINICA_CONFIG.SUPABASE_ANON_KEY
+      );
+    }
+    return window.__progSb;
+  }
+  console.error("[Programari] Nu pot accesa clientul Supabase");
+  return null;
+}
+
+var programariList = [];
+var selectedProg = null;
+
+function progEsc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function progFmtDate(iso) {
+  if (!iso) return "—";
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("ro-RO", { day: "2-digit", month: "long", year: "numeric" });
+}
+function progFmtTime(iso) {
+  if (!iso) return "";
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
+}
+function progDateParts(iso) {
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return { d: "—", m: "", t: "" };
+  return {
+    d: String(d.getDate()).padStart(2, "0"),
+    m: d.toLocaleDateString("ro-RO", { month: "short" }).toUpperCase().replace(".", ""),
+    t: d.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })
+  };
+}
+function progStatusBadge(status) {
+  switch (status) {
+    case "scheduled": return { label: "Programat", cls: "b-sched" };
+    case "bilet_uploaded": return { label: "Bilet trimis", cls: "b-bilet" };
+    case "ocr_processed": return { label: "În procesare", cls: "b-ocr" };
+    case "completed": return { label: "Finalizat", cls: "b-done" };
+    case "cancelled": return { label: "Anulat", cls: "b-cancel" };
+    default: return { label: status || "—", cls: "b-sched" };
+  }
+}
+
+function showToast(msg, isErr) {
+  var existing = document.querySelector(".toast-msg");
+  if (existing) existing.remove();
+  var t = document.createElement("div");
+  t.className = "toast-msg" + (isErr ? " err" : "");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 4500);
+}
+
+async function loadProgramari() {
+  var sb = getSb();
+  if (!sb) return;
+  var loadEl = document.getElementById("loadingProg");
+  var listEl = document.getElementById("progList");
+  loadEl.style.display = "flex";
+  listEl.style.display = "none";
+
+  try {
+    // RLS will filter to only the pacient's own programari (by email match)
+    var res = await sb.from("cc_programari")
+      .select("*")
+      .order("data_programare", { ascending: false });
+    loadEl.style.display = "none";
+    if (res.error) {
+      listEl.innerHTML = '<div class="empty"><h3>Eroare</h3>' + progEsc(res.error.message) + '</div>';
+      listEl.style.display = "block";
+      return;
+    }
+    programariList = res.data || [];
+    renderProgramari();
+  } catch (e) {
+    loadEl.style.display = "none";
+    listEl.innerHTML = '<div class="empty"><h3>Eroare</h3>' + progEsc(String(e.message || e)) + '</div>';
+    listEl.style.display = "block";
+  }
+}
+
+function renderProgramari() {
+  var listEl = document.getElementById("progList");
+  listEl.style.display = "block";
+  if (!programariList.length) {
+    listEl.innerHTML =
+      '<div style="background:white;border:1.5px solid rgba(15,17,23,0.08);border-radius:2px;padding:32px;text-align:center">' +
+        '<div style="font-size:32px;margin-bottom:10px">📅</div>' +
+        '<h3 style="font-family:DM Serif Display,serif;font-size:18px;margin-bottom:6px">Nicio programare încă</h3>' +
+        '<div style="font-size:12px;color:rgba(15,17,23,0.55)">Apasă „+ Programare nouă" mai sus pentru a-ți face o programare.</div>' +
+      '</div>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < programariList.length; i++) {
+    var p = programariList[i];
+    var parts = progDateParts(p.data_programare);
+    var badge = progStatusBadge(p.status);
+    var cls = ["prog-row"];
+    if (p.bilet_url && p.status !== "completed") cls.push("with-bilet");
+    if (p.status === "completed") cls.push("completed");
+    if (p.status === "cancelled") cls.push("cancelled");
+    var serviciu = p.tip_serviciu || "Programare";
+    var metaParts = [];
+    metaParts.push('<span>' + progEsc(serviciu) + '</span>');
+    if (p.nume_doctor) metaParts.push('<span>👨‍⚕️ ' + progEsc(p.nume_doctor) + '</span>');
+    if (p.bilet_url) metaParts.push('<span>📎 Bilet trimis</span>');
+
+    html += '<div class="' + cls.join(" ") + '" data-prog-id="' + p.id + '">';
+    html += '<div class="prog-row-date">';
+    html += '<div class="d">' + parts.d + '</div>';
+    html += '<div class="m">' + progEsc(parts.m) + '</div>';
+    html += '<div class="t">' + parts.t + '</div>';
+    html += '</div>';
+    html += '<div class="prog-row-info">';
+    html += '<h4>' + progEsc(serviciu) + '</h4>';
+    html += '<div class="meta">' + metaParts.join("") + '</div>';
+    html += '</div>';
+    html += '<span class="prog-row-badge ' + badge.cls + '">' + badge.label + '</span>';
+    html += '</div>';
+  }
+  listEl.innerHTML = html;
+  // Wire up click
+  var rows = listEl.querySelectorAll(".prog-row");
+  for (var k = 0; k < rows.length; k++) {
+    rows[k].addEventListener("click", function() {
+      var id = parseInt(this.getAttribute("data-prog-id"), 10);
+      openProgModal(id);
+    });
+  }
+}
+
+async function openProgModal(id) {
+  var p = programariList.find(function(x) { return x.id === id; });
+  if (!p) return;
+  selectedProg = p;
+
+  document.getElementById("modalProgTitle").textContent = p.tip_serviciu || "Programare";
+  document.getElementById("modalProgSub").textContent =
+    progFmtDate(p.data_programare) + " · " + progFmtTime(p.data_programare);
+
+  var body = document.getElementById("modalProgBody");
+  var html = "";
+
+  // Detalii
+  html += '<div style="margin-bottom:16px">';
+  html += '<div class="modal-detail-row"><span class="lbl">Data</span><span class="val">' + progFmtDate(p.data_programare) + '</span></div>';
+  html += '<div class="modal-detail-row"><span class="lbl">Ora</span><span class="val">' + progFmtTime(p.data_programare) + '</span></div>';
+  if (p.nume_doctor) html += '<div class="modal-detail-row"><span class="lbl">Doctor</span><span class="val">' + progEsc(p.nume_doctor) + '</span></div>';
+  if (p.note) html += '<div class="modal-detail-row"><span class="lbl">Note</span><span class="val">' + progEsc(p.note) + '</span></div>';
+  html += '<div class="modal-detail-row"><span class="lbl">Status</span><span class="val">' + progStatusBadge(p.status).label + '</span></div>';
+  html += '</div>';
+
+  // Bilet section
+  if (p.status === "cancelled") {
+    html += '<div style="padding:14px;background:rgba(200,57,43,0.06);border:1px solid rgba(200,57,43,0.2);border-radius:2px;text-align:center;font-size:12px;color:#7a1f15">Această programare a fost anulată.</div>';
+  } else if (p.bilet_url) {
+    html += '<div class="bilet-existing" id="biletExisting">';
+    html += '<div class="loading">Se încarcă biletul...</div>';
+    html += '</div>';
+    if (p.status !== "completed") {
+      html += '<div class="bilet-upload-zone">';
+      html += '<p>Vrei să înlocuiești biletul?</p>';
+      html += '<div class="bilet-upload-actions">';
+      html += '<button class="bilet-btn" onclick="document.getElementById(\'biletFileInput\').click()">📎 Alege alt fișier</button>';
+      html += '</div>';
+      html += '<input type="file" id="biletFileInput" accept="image/jpeg,image/png,image/jpg,application/pdf" style="display:none" onchange="handleBiletUpload(event)">';
+      html += '</div>';
+    }
+  } else {
+    html += '<div class="bilet-upload-zone">';
+    html += '<p><strong>Urcă biletul de trimitere</strong> de la medicul tău, ca să putem pregăti analizele înainte să ajungi la clinică.</p>';
+    html += '<div class="bilet-upload-actions">';
+    html += '<button class="bilet-btn primary" onclick="document.getElementById(\'biletFileInput\').click()">📷 Fă o poză sau alege fișier</button>';
+    html += '</div>';
+    html += '<div style="font-size:10px;color:rgba(15,17,23,0.45);margin-top:10px;letter-spacing:0.4px">JPG, PNG sau PDF · max 10MB</div>';
+    html += '<input type="file" id="biletFileInput" accept="image/jpeg,image/png,image/jpg,application/pdf" style="display:none" onchange="handleBiletUpload(event)">';
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+  document.getElementById("modalProg").classList.add("show");
+
+  // Load bilet preview if exists
+  if (p.bilet_url) loadBiletPreview(p);
+}
+
+function closeProgModal() {
+  document.getElementById("modalProg").classList.remove("show");
+  selectedProg = null;
+}
+
+async function loadBiletPreview(p) {
+  var container = document.getElementById("biletExisting");
+  if (!container) return;
+  var sb = getSb();
+  if (!sb) return;
+  try {
+    var signedRes = await sb.storage.from("bilete-programari").createSignedUrl(p.bilet_url, 60);
+    if (signedRes.error || !signedRes.data) {
+      container.innerHTML = '<div style="font-size:12px;color:rgba(15,17,23,0.55)">Bilet urcat (' + progEsc(p.bilet_filename || "fișier") + ')</div>';
+      return;
+    }
+    var url = signedRes.data.signedUrl;
+    var mime = p.bilet_mime_type || "";
+    var html = "";
+    if (mime.indexOf("image/") === 0) {
+      html += '<img src="' + progEsc(url) + '" alt="Bilet">';
+    } else {
+      html += '<div style="font-size:36px;margin-bottom:6px">📄</div>';
+    }
+    html += '<div class="file-info">' + progEsc(p.bilet_filename || "Bilet") + '</div>';
+    html += '<a href="' + progEsc(url) + '" target="_blank" rel="noopener">Deschide</a>';
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div style="font-size:12px;color:rgba(15,17,23,0.55)">' + progEsc(String(e.message || e)) + '</div>';
+  }
+}
+
+async function handleBiletUpload(ev) {
+  var file = ev.target.files && ev.target.files[0];
+  if (!file || !selectedProg) return;
+
+  // Validate
+  var allowed = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+  if (allowed.indexOf(file.type) < 0) {
+    showToast("Doar JPG, PNG sau PDF sunt acceptate.", true);
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast("Fișierul e prea mare (max 10MB).", true);
+    return;
+  }
+
+  var sb = getSb();
+  if (!sb) return;
+
+  // Build path: bilete-programari/<email>/<programare_id>_<timestamp>.<ext>
+  var email = pacientProfile.email;
+  if (!email) { showToast("Eroare: emailul lipsește din profilul tău.", true); return; }
+  var ext = file.name.split(".").pop().toLowerCase();
+  if (ext.length > 5) ext = file.type === "application/pdf" ? "pdf" : "jpg";
+  var path = email + "/" + selectedProg.id + "_" + Date.now() + "." + ext;
+
+  // Disable upload buttons
+  var btns = document.querySelectorAll(".bilet-btn");
+  for (var i = 0; i < btns.length; i++) { btns[i].disabled = true; btns[i].textContent = "Se urcă..."; }
+
+  try {
+    // Upload to storage
+    var upRes = await sb.storage.from("bilete-programari").upload(path, file, {
+      contentType: file.type,
+      upsert: false
+    });
+    if (upRes.error) throw new Error(upRes.error.message);
+
+    // Update programare row
+    var updRes = await sb.from("cc_programari").update({
+      bilet_url: path,
+      bilet_filename: file.name,
+      bilet_mime_type: file.type,
+      bilet_uploaded_at: new Date().toISOString(),
+      status: "bilet_uploaded"
+    }).eq("id", selectedProg.id);
+    if (updRes.error) throw new Error(updRes.error.message);
+
+    showToast("Biletul a fost trimis. Vei vedea status nou în curând.");
+    closeProgModal();
+    await loadProgramari();
+  } catch (e) {
+    showToast("Eroare upload: " + (e.message || e), true);
+    for (var k = 0; k < btns.length; k++) { btns[k].disabled = false; }
+  }
+}
+
+function closeProgNouaModal() {
+  document.getElementById("modalProgNoua").classList.remove("show");
+}
+
+// Wire up buttons
+document.getElementById("btnProgNoua").addEventListener("click", function() {
+  document.getElementById("modalProgNoua").classList.add("show");
+});
+
+// Close modals on outside click
+document.getElementById("modalProg").addEventListener("click", function(e) {
+  if (e.target === this) closeProgModal();
+});
+document.getElementById("modalProgNoua").addEventListener("click", function(e) {
+  if (e.target === this) closeProgNouaModal();
 });
 </script>
 
