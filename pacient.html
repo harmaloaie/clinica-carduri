@@ -695,6 +695,143 @@ tbody tr:last-child td { border-bottom: none; }
 }
 .toast-msg.err { border-left-color: var(--accent); }
 
+/* ─── POST-BOOKING modal (upload bilet + add analize) ─── */
+.postbook-section {
+  background: white;
+  border: 1.5px solid rgba(15,17,23,0.08);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.postbook-section h4 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+.postbook-section .desc {
+  font-size: 12px;
+  color: rgba(15,17,23,0.55);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.analize-search-wrap { position: relative; }
+.analize-search-input {
+  width: 100%; padding: 11px 13px;
+  border: 1.5px solid rgba(15,17,23,0.15);
+  border-radius: var(--radius);
+  font-family: inherit; font-size: 13px;
+  background: white;
+}
+.analize-search-input:focus {
+  outline: none; border-color: var(--gold);
+}
+.analize-suggestions {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: white;
+  border: 1.5px solid rgba(15,17,23,0.15);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  max-height: 240px; overflow-y: auto;
+  z-index: 10; display: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.analize-suggestions.show { display: block; }
+.analize-suggestions .sugg-item {
+  padding: 10px 13px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(15,17,23,0.05);
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px;
+}
+.analize-suggestions .sugg-item:hover,
+.analize-suggestions .sugg-item.highlighted {
+  background: rgba(184,151,58,0.08);
+}
+.analize-suggestions .sugg-item:last-child { border-bottom: none; }
+.analize-suggestions .sugg-name {
+  font-size: 13px; color: var(--ink);
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.analize-suggestions .sugg-price {
+  font-size: 12px; color: var(--green);
+  font-weight: 700; white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+}
+.analize-suggestions .sugg-empty {
+  padding: 14px; text-align: center;
+  font-size: 12px; color: rgba(15,17,23,0.5);
+}
+
+.analize-tags {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 12px; min-height: 30px;
+}
+.analize-tag {
+  background: rgba(26,107,60,0.1);
+  border: 1px solid rgba(26,107,60,0.3);
+  color: var(--green);
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 12px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: inherit;
+}
+.analize-tag .price {
+  font-size: 11px;
+  opacity: 0.75;
+  font-family: 'JetBrains Mono', monospace;
+}
+.analize-tag button {
+  background: none; border: none;
+  font-size: 16px; color: var(--green);
+  cursor: pointer; padding: 0;
+  line-height: 1; opacity: 0.6;
+}
+.analize-tag button:hover { opacity: 1; }
+
+.postbook-total {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1.5px solid rgba(15,17,23,0.08);
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 13px;
+}
+.postbook-total .label { color: rgba(15,17,23,0.6); font-weight: 600; }
+.postbook-total .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 700;
+  color: var(--green);
+}
+
+.postbook-actions {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 16px;
+}
+.postbook-actions button {
+  flex: 1; min-width: 130px;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  border: 1.5px solid var(--ink);
+}
+.postbook-actions .btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.postbook-actions .btn-secondary {
+  background: white;
+  color: var(--ink);
+}
+.postbook-actions button:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
+
 </style>
 </head>
 <body>
@@ -844,6 +981,49 @@ tbody tr:last-child td { border-bottom: none; }
 <!-- Calendly script (loaded once) -->
 <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
 <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
+
+<!-- Modal: post-booking (upload bilet + add analize manual) -->
+<div class="modal-bg" id="modalPostBooking">
+  <div class="modal-card" style="max-width:580px">
+    <button class="modal-close-x" onclick="closePostBookingModal()">&times;</button>
+    <h3>Programare confirmată!</h3>
+    <div class="modal-sub" id="postBookSub">Pentru a pregăti analizele înainte să ajungi, poți:</div>
+
+    <!-- Section 1: Upload bilet -->
+    <div class="postbook-section">
+      <h4>📎 Bilet de trimitere</h4>
+      <div class="desc">Dacă ai bilet de la medic, urcă-l aici și vom pregăti analizele înainte să ajungi.</div>
+      <div id="postBookBiletStatus"></div>
+      <div class="bilet-upload-actions" style="justify-content:flex-start">
+        <button class="bilet-btn primary" onclick="document.getElementById('postBookBiletInput').click()">📷 Fă o poză sau alege fișier</button>
+      </div>
+      <input type="file" id="postBookBiletInput" accept="image/jpeg,image/png,image/jpg,application/pdf" style="display:none" onchange="handlePostBookBiletUpload(event)">
+      <div style="font-size:10px;color:rgba(15,17,23,0.45);margin-top:8px;letter-spacing:0.4px">JPG, PNG sau PDF · max 10MB</div>
+    </div>
+
+    <!-- Section 2: Add analize manual -->
+    <div class="postbook-section">
+      <h4>🧪 Sau adaugă analize</h4>
+      <div class="desc">Caută și selectează analizele de care ai nevoie (din lista Clinica Central):</div>
+      <div class="analize-search-wrap">
+        <input type="text" class="analize-search-input" id="analizeSearchInput" placeholder="Începe să tastezi (ex: glicemie, colesterol, TSH...)" autocomplete="off">
+        <div class="analize-suggestions" id="analizeSuggestions"></div>
+      </div>
+      <div class="analize-tags" id="analizeTagsContainer">
+        <span style="font-size:11px;color:rgba(15,17,23,0.4);font-style:italic">Nicio analiză selectată</span>
+      </div>
+      <div class="postbook-total" id="postBookTotal" style="display:none">
+        <span class="label">Total estimativ:</span>
+        <span class="val" id="postBookTotalVal">0 RON</span>
+      </div>
+    </div>
+
+    <div class="postbook-actions">
+      <button class="btn-secondary" onclick="closePostBookingModal()">Mai târziu</button>
+      <button class="btn-primary" id="btnPostBookSave" onclick="savePostBookingChoices()">Salvează</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared/qrcode-lib.js"></script>
@@ -1429,17 +1609,450 @@ function openCalendlyEmbed() {
     window.addEventListener("message", function(ev) {
       if (!ev.data || typeof ev.data !== "object") return;
       if (ev.data.event === "calendly.event_scheduled") {
-        console.log("[calendly] event scheduled, refresh list in ~3s");
-        showToast("Programare confirmată! Se actualizează lista...");
-        // Calendly webhook needs a moment to hit our Edge Function + DB insert
+        console.log("[calendly] event scheduled, capturing invitee URI");
+        var inviteeUri = null;
+        try {
+          inviteeUri = ev.data.payload && ev.data.payload.invitee && ev.data.payload.invitee.uri;
+        } catch (e) {}
+        console.log("[calendly] invitee URI:", inviteeUri);
+        showToast("Programare confirmată! Se pregătesc detaliile...");
+        // Wait for webhook to create row in DB
         setTimeout(function() {
           closeProgNouaModal();
           loadProgramari();
+          // Open post-booking modal after list refresh
+          setTimeout(function() {
+            openPostBookingModal(inviteeUri);
+          }, 600);
         }, 3000);
       }
     });
   }
 }
+
+// ════════════════════════════════════════════════════════════════
+// POST-BOOKING MODAL — open after Calendly confirms booking
+// Lets pacient upload bilet OR add analize manually (with autocomplete)
+// ════════════════════════════════════════════════════════════════
+
+var postBookState = {
+  programareId: null,
+  inviteeUri: null,
+  selectedAnalize: [], // array of { id, denumire, pret }
+  ccPriceCatalog: [],  // loaded from cc_preturi
+  catalogLoaded: false,
+  highlightedIdx: -1,
+  biletUploaded: false
+};
+
+async function openPostBookingModal(inviteeUri) {
+  // Find the just-created programare for this pacient
+  postBookState.inviteeUri = inviteeUri || null;
+  postBookState.programareId = null;
+  postBookState.selectedAnalize = [];
+  postBookState.biletUploaded = false;
+
+  // Reset UI
+  document.getElementById("postBookBiletStatus").innerHTML = "";
+  document.getElementById("analizeSearchInput").value = "";
+  document.getElementById("analizeSuggestions").classList.remove("show");
+  renderAnalizeTags();
+  updatePostBookTotal();
+
+  // Find programarea cea mai recenta (matches inviteeUri sau e cea mai recenta scheduled)
+  var prog = null;
+  if (postBookState.inviteeUri && Array.isArray(programariList)) {
+    prog = programariList.find(function(p) { return p.calendly_invitee_uri === postBookState.inviteeUri; });
+  }
+  if (!prog && Array.isArray(programariList)) {
+    // Fallback: cea mai recenta cu status scheduled
+    var sorted = programariList.slice().sort(function(a, b) { return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+    prog = sorted.find(function(p) { return p.status === "scheduled"; });
+  }
+  if (prog) {
+    postBookState.programareId = prog.id;
+    document.getElementById("postBookSub").textContent =
+      "Programare pe " + progFmtDate(prog.data_programare) + " la " + progFmtTime(prog.data_programare) + ". Pregătește-te:";
+  } else {
+    document.getElementById("postBookSub").textContent = "Programarea a fost creată. Adaugă bilet și analize:";
+  }
+
+  // Load CC price catalog if not yet
+  if (!postBookState.catalogLoaded) {
+    loadCcCatalog();
+  }
+
+  document.getElementById("modalPostBooking").classList.add("show");
+}
+
+function closePostBookingModal() {
+  document.getElementById("modalPostBooking").classList.remove("show");
+}
+
+async function loadCcCatalog() {
+  var sb = getSb();
+  if (!sb) return;
+  try {
+    // Load all CC preturi (paginat ca sa scapam de limita de 1000)
+    var all = [];
+    var page = 0;
+    var pageSize = 1000;
+    while (page < 20) {
+      var from = page * pageSize;
+      var to = from + pageSize - 1;
+      var res = await sb.from("cc_preturi")
+        .select("id, denumire, denumire_norm, pret, activ")
+        .eq("activ", true)
+        .order("denumire", { ascending: true })
+        .range(from, to);
+      if (res.error) {
+        console.error("[postbook] cc_preturi load error:", res.error);
+        return;
+      }
+      if (!Array.isArray(res.data) || res.data.length === 0) break;
+      all = all.concat(res.data);
+      if (res.data.length < pageSize) break;
+      page++;
+    }
+    postBookState.ccPriceCatalog = all;
+    postBookState.catalogLoaded = true;
+    console.log("[postbook] CC catalog loaded:", all.length, "items");
+  } catch (e) {
+    console.error("[postbook] catalog error:", e);
+  }
+}
+
+// ─── Autocomplete search ───
+function progNormName(s) {
+  return String(s || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function searchCatalog(query) {
+  var q = progNormName(query);
+  if (q.length < 2) return [];
+  var results = [];
+  var alreadySelected = postBookState.selectedAnalize.map(function(a) { return a.id; });
+  for (var i = 0; i < postBookState.ccPriceCatalog.length; i++) {
+    var item = postBookState.ccPriceCatalog[i];
+    if (alreadySelected.indexOf(item.id) >= 0) continue;
+    var norm = item.denumire_norm || progNormName(item.denumire);
+    if (norm.indexOf(q) >= 0) {
+      // Score: startsWith > contains
+      var score = norm.indexOf(q) === 0 ? 2 : 1;
+      results.push({ item: item, score: score });
+    }
+    if (results.length >= 20) break;
+  }
+  results.sort(function(a, b) { return b.score - a.score; });
+  return results.slice(0, 8).map(function(r) { return r.item; });
+}
+
+function renderSuggestions(items) {
+  var box = document.getElementById("analizeSuggestions");
+  if (!items.length) {
+    box.innerHTML = '<div class="sugg-empty">Nicio analiză găsită. Încearcă alte cuvinte.</div>';
+    box.classList.add("show");
+    postBookState.highlightedIdx = -1;
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    html += '<div class="sugg-item" data-idx="' + i + '" data-id="' + it.id + '">';
+    html += '<span class="sugg-name">' + progEsc(it.denumire) + '</span>';
+    html += '<span class="sugg-price">' + Math.round(it.pret) + ' RON</span>';
+    html += '</div>';
+  }
+  box.innerHTML = html;
+  box.classList.add("show");
+  postBookState.highlightedIdx = -1;
+  // Click handlers
+  var items_dom = box.querySelectorAll(".sugg-item");
+  for (var k = 0; k < items_dom.length; k++) {
+    items_dom[k].addEventListener("click", function() {
+      var id = parseInt(this.getAttribute("data-id"), 10);
+      var item = postBookState.ccPriceCatalog.find(function(x) { return x.id === id; });
+      if (item) selectAnaliza(item);
+    });
+  }
+}
+
+function selectAnaliza(item) {
+  if (postBookState.selectedAnalize.find(function(a) { return a.id === item.id; })) return;
+  postBookState.selectedAnalize.push({
+    id: item.id,
+    denumire: item.denumire,
+    pret: item.pret
+  });
+  // Clear search
+  document.getElementById("analizeSearchInput").value = "";
+  document.getElementById("analizeSuggestions").classList.remove("show");
+  renderAnalizeTags();
+  updatePostBookTotal();
+  // Refocus input pentru a continua adaugarea
+  document.getElementById("analizeSearchInput").focus();
+}
+
+function removeAnaliza(id) {
+  postBookState.selectedAnalize = postBookState.selectedAnalize.filter(function(a) { return a.id !== id; });
+  renderAnalizeTags();
+  updatePostBookTotal();
+}
+
+function renderAnalizeTags() {
+  var container = document.getElementById("analizeTagsContainer");
+  if (!postBookState.selectedAnalize.length) {
+    container.innerHTML = '<span style="font-size:11px;color:rgba(15,17,23,0.4);font-style:italic">Nicio analiză selectată</span>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < postBookState.selectedAnalize.length; i++) {
+    var a = postBookState.selectedAnalize[i];
+    html += '<span class="analize-tag" data-id="' + a.id + '">';
+    html += progEsc(a.denumire);
+    html += '<span class="price">' + Math.round(a.pret) + ' RON</span>';
+    html += '<button onclick="removeAnaliza(' + a.id + ')" title="Elimină">&times;</button>';
+    html += '</span>';
+  }
+  container.innerHTML = html;
+}
+
+function updatePostBookTotal() {
+  var total = postBookState.selectedAnalize.reduce(function(s, a) { return s + (Number(a.pret) || 0); }, 0);
+  var totalEl = document.getElementById("postBookTotal");
+  if (postBookState.selectedAnalize.length > 0) {
+    document.getElementById("postBookTotalVal").textContent = Math.round(total) + " RON";
+    totalEl.style.display = "flex";
+  } else {
+    totalEl.style.display = "none";
+  }
+}
+
+// Hook up search input
+(function() {
+  var searchInput = document.getElementById("analizeSearchInput");
+  if (!searchInput) return;
+  var debounceTimer = null;
+  searchInput.addEventListener("input", function() {
+    clearTimeout(debounceTimer);
+    var val = this.value;
+    debounceTimer = setTimeout(function() {
+      if (val.trim().length < 2) {
+        document.getElementById("analizeSuggestions").classList.remove("show");
+        return;
+      }
+      if (!postBookState.catalogLoaded) {
+        document.getElementById("analizeSuggestions").innerHTML = '<div class="sugg-empty">Se încarcă catalogul...</div>';
+        document.getElementById("analizeSuggestions").classList.add("show");
+        return;
+      }
+      var results = searchCatalog(val);
+      renderSuggestions(results);
+    }, 150);
+  });
+  searchInput.addEventListener("blur", function() {
+    // Delay hiding to allow click on suggestion
+    setTimeout(function() {
+      document.getElementById("analizeSuggestions").classList.remove("show");
+    }, 200);
+  });
+  searchInput.addEventListener("focus", function() {
+    if (this.value.trim().length >= 2 && postBookState.catalogLoaded) {
+      var results = searchCatalog(this.value);
+      renderSuggestions(results);
+    }
+  });
+  // Keyboard navigation
+  searchInput.addEventListener("keydown", function(e) {
+    var box = document.getElementById("analizeSuggestions");
+    if (!box.classList.contains("show")) return;
+    var items = box.querySelectorAll(".sugg-item");
+    if (!items.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      postBookState.highlightedIdx = Math.min(postBookState.highlightedIdx + 1, items.length - 1);
+      items.forEach(function(el, i) { el.classList.toggle("highlighted", i === postBookState.highlightedIdx); });
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      postBookState.highlightedIdx = Math.max(postBookState.highlightedIdx - 1, 0);
+      items.forEach(function(el, i) { el.classList.toggle("highlighted", i === postBookState.highlightedIdx); });
+    } else if (e.key === "Enter" && postBookState.highlightedIdx >= 0) {
+      e.preventDefault();
+      items[postBookState.highlightedIdx].click();
+    } else if (e.key === "Escape") {
+      box.classList.remove("show");
+    }
+  });
+})();
+
+// ─── Bilet upload from post-booking modal ───
+async function handlePostBookBiletUpload(ev) {
+  var file = ev.target.files && ev.target.files[0];
+  if (!file || !postBookState.programareId) {
+    showToast("Programarea nu a fost încă procesată. Te rog încearcă din tab Programări.", true);
+    return;
+  }
+
+  // Validate
+  var allowed = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+  if (allowed.indexOf(file.type) < 0) {
+    showToast("Doar JPG, PNG sau PDF sunt acceptate.", true);
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast("Fișierul e prea mare (max 10MB).", true);
+    return;
+  }
+
+  var sb = getSb();
+  if (!sb) return;
+
+  var email = pacientProfile.email;
+  if (!email) {
+    showToast("Eroare: emailul lipsește din profil.", true);
+    return;
+  }
+  var ext = file.name.split(".").pop().toLowerCase();
+  if (ext.length > 5) ext = file.type === "application/pdf" ? "pdf" : "jpg";
+  var path = email + "/" + postBookState.programareId + "_" + Date.now() + "." + ext;
+
+  var statusEl = document.getElementById("postBookBiletStatus");
+  statusEl.innerHTML = '<div style="padding:10px;background:rgba(15,17,23,0.05);border-radius:2px;font-size:12px;color:rgba(15,17,23,0.65)">⏳ Se urcă biletul...</div>';
+
+  try {
+    var upRes = await sb.storage.from("bilete-programari").upload(path, file, {
+      contentType: file.type,
+      upsert: false
+    });
+    if (upRes.error) throw new Error(upRes.error.message);
+
+    var updRes = await sb.from("cc_programari").update({
+      bilet_url: path,
+      bilet_filename: file.name,
+      bilet_mime_type: file.type,
+      bilet_uploaded_at: new Date().toISOString(),
+      status: "bilet_uploaded"
+    }).eq("id", postBookState.programareId);
+    if (updRes.error) throw new Error(updRes.error.message);
+
+    postBookState.biletUploaded = true;
+    statusEl.innerHTML =
+      '<div style="padding:10px;background:rgba(26,107,60,0.1);border:1px solid rgba(26,107,60,0.3);border-radius:2px;font-size:12px;color:#155a32">' +
+      '✓ Bilet urcat: <strong>' + progEsc(file.name) + '</strong></div>';
+    showToast("Biletul a fost trimis.");
+  } catch (e) {
+    statusEl.innerHTML = '<div style="padding:10px;background:rgba(200,57,43,0.08);border:1px solid rgba(200,57,43,0.3);border-radius:2px;font-size:12px;color:#7a1f15">Eroare: ' + progEsc(e.message || String(e)) + '</div>';
+  }
+}
+
+// ─── Save: create pending cerere if analize selected ───
+async function savePostBookingChoices() {
+  var sb = getSb();
+  if (!sb) return;
+
+  var btn = document.getElementById("btnPostBookSave");
+  btn.disabled = true;
+  btn.textContent = "Se salvează...";
+
+  try {
+    var hasAnalize = postBookState.selectedAnalize.length > 0;
+
+    if (hasAnalize && postBookState.programareId) {
+      // Build payload similar to admin's processProgramareOcr
+      var items = postBookState.selectedAnalize.map(function(a) {
+        return {
+          denumire: a.denumire,
+          laborator: "Clinica Central",
+          pret_lista: a.pret,
+          pret_final: a.pret,
+          discount: 0,
+          timp: null,
+          categorie: null,
+          detalii: null
+        };
+      });
+      var totalLista = items.reduce(function(s, i) { return s + Number(i.pret_lista); }, 0);
+      var totalFinal = totalLista;
+
+      // Build groups by lab (here just 1 lab = "Clinica Central")
+      var groups = [{
+        laborator: "Clinica Central",
+        numar_analize: items.length,
+        subtotal_lista: totalLista,
+        subtotal_final: totalFinal,
+        economie: 0
+      }];
+
+      var nume = (pacientProfile.nume || "").trim();
+      var prenume = (pacientProfile.prenume || "").trim();
+
+      var payload = {
+        pacient_prenume: prenume,
+        pacient_nume: nume,
+        cnp_pacient: pacientProfile.cnp || null,
+        pacient_email: pacientProfile.email || null,
+        pacient_telefon_prefix: pacientProfile.telefon ? "+40" : null,
+        pacient_telefon_numar: pacientProfile.telefon ? String(pacientProfile.telefon).replace(/[\s\-\.]/g, "").replace(/^(\+40|0040|0)/, "") : null,
+        user_id: null,
+        user_email: pacientProfile.email || null,
+        numar_analize: items.length,
+        numar_laboratoare: 1,
+        numar_eprubete: 0,
+        total_lista_ron: Math.round(totalLista * 100) / 100,
+        total_final_ron: Math.round(totalFinal * 100) / 100,
+        economie_ron: 0,
+        items: items,
+        groups: groups,
+        eprubete: [],
+        discounts: {},
+        status: "pending",
+        programare_id: postBookState.programareId
+      };
+
+      var insertRes = await sb.from("cc_cereri").insert([payload]).select().single();
+      if (insertRes.error) {
+        console.error("[postbook] cerere insert error:", insertRes.error);
+        throw new Error(insertRes.error.message);
+      }
+
+      var newCerereId = insertRes.data.id;
+
+      // Link la programare + update status la ocr_processed (avem cerere pending acum)
+      await sb.from("cc_programari")
+        .update({ cerere_id: newCerereId, status: postBookState.biletUploaded ? "bilet_uploaded" : "ocr_processed" })
+        .eq("id", postBookState.programareId);
+
+      showToast("Am salvat " + items.length + " analiză(e). Adminul va vedea cererea ta.");
+    } else if (postBookState.biletUploaded) {
+      // Doar bilet, fara analize manuale — am updatat deja status în handlePostBookBiletUpload
+      showToast("Bilet salvat. Adminul îl va procesa cu OCR.");
+    } else {
+      // Nimic — doar inchide
+    }
+
+    closePostBookingModal();
+    loadProgramari(); // refresh lista pentru a vedea status nou
+  } catch (e) {
+    showToast("Eroare la salvare: " + (e.message || e), true);
+    btn.disabled = false;
+    btn.textContent = "Salvează";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Salvează";
+  }
+}
+
+// Close modal on outside click
+setTimeout(function() {
+  var m = document.getElementById("modalPostBooking");
+  if (m) {
+    m.addEventListener("click", function(e) {
+      if (e.target === this) closePostBookingModal();
+    });
+  }
+}, 100);
 
 // Wire up buttons
 document.getElementById("btnProgNoua").addEventListener("click", function() {
