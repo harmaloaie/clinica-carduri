@@ -2126,7 +2126,7 @@ async function savePostBookingChoices() {
         programare_id: postBookState.programareId
       };
 
-      // Force fresh token + use raw fetch to GUARANTEE Authorization header
+      // Use RPC function (SECURITY DEFINER bypasses RLS but validates internally)
       var sessRes = await sb.auth.getSession();
       var accessToken = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token;
       var sessionEmail = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.user && sessRes.data.session.user.email;
@@ -2136,48 +2136,25 @@ async function savePostBookingChoices() {
         throw new Error("Sesiune expirată — te rog reloghează-te pe Carduri (refresh pagina + login din nou).");
       }
 
-      var supaUrl = window.CLINICA_CONFIG.SUPABASE_URL;
-      var anonKey = window.CLINICA_CONFIG.SUPABASE_ANON_KEY;
-
-      // RAW fetch with explicit Bearer token
-      var insertResp = await fetch(supaUrl + "/rest/v1/cc_cereri", {
-        method: "POST",
-        headers: {
-          "apikey": anonKey,
-          "Authorization": "Bearer " + accessToken,
-          "Content-Type": "application/json",
-          "Prefer": "return=representation"
-        },
-        body: JSON.stringify(payload)
+      // Add programare_id to payload for RPC
+      var rpcPayload = Object.assign({}, payload, {
+        programare_id: postBookState.programareId
       });
 
-      if (!insertResp.ok) {
-        var errText = await insertResp.text();
-        console.error("[postbook] HTTP", insertResp.status, errText);
-        console.error("[postbook] payload sent:", payload);
-        throw new Error("HTTP " + insertResp.status + ": " + errText.substring(0, 300));
+      // Call RPC function
+      var rpcRes = await sb.rpc("pacient_create_cerere_pending", { payload: rpcPayload });
+
+      if (rpcRes.error) {
+        console.error("[postbook] RPC error:", rpcRes.error);
+        console.error("[postbook] payload sent:", rpcPayload);
+        throw new Error(rpcRes.error.message || "Eroare la creare cerere");
       }
 
-      var insertData = await insertResp.json();
-      var newCerereId = Array.isArray(insertData) ? insertData[0].id : insertData.id;
+      var newCerereId = rpcRes.data;
       console.log("[postbook] cerere created with id:", newCerereId);
 
-      // Update programare cu cerere_id + status (raw fetch with token)
-      var newStatus = postBookState.biletUploaded ? "bilet_uploaded" : "ocr_processed";
-      var updResp = await fetch(supaUrl + "/rest/v1/cc_programari?id=eq." + postBookState.programareId, {
-        method: "PATCH",
-        headers: {
-          "apikey": anonKey,
-          "Authorization": "Bearer " + accessToken,
-          "Content-Type": "application/json",
-          "Prefer": "return=minimal"
-        },
-        body: JSON.stringify({ cerere_id: newCerereId, status: newStatus })
-      });
-      if (!updResp.ok) {
-        var updErrText = await updResp.text();
-        console.warn("[postbook] programare update failed (non-fatal):", updResp.status, updErrText);
-      }
+      // Note: RPC function already updates cc_programari (cerere_id + status)
+      // No need for separate PATCH
 
       showToast("Am salvat " + items.length + " analiză(e). Adminul va vedea cererea ta.");
     } else if (postBookState.biletUploaded) {
