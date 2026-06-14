@@ -994,11 +994,22 @@ tbody tr:last-child td { border-bottom: none; }
       <h4>📎 Bilet de trimitere</h4>
       <div class="desc">Dacă ai bilet de la medic, urcă-l aici și vom pregăti analizele înainte să ajungi.</div>
       <div id="postBookBiletStatus"></div>
-      <div class="bilet-upload-actions" style="justify-content:flex-start">
+      <div class="bilet-upload-actions" id="postBookBiletButtons" style="justify-content:flex-start">
         <button class="bilet-btn primary" onclick="document.getElementById('postBookBiletInput').click()">📷 Fă o poză sau alege fișier</button>
       </div>
       <input type="file" id="postBookBiletInput" accept="image/jpeg,image/png,image/jpg,application/pdf" style="display:none" onchange="handlePostBookBiletUpload(event)">
-      <div style="font-size:10px;color:rgba(15,17,23,0.45);margin-top:8px;letter-spacing:0.4px">JPG, PNG sau PDF · max 10MB</div>
+      <div id="postBookBiletHint" style="font-size:10px;color:rgba(15,17,23,0.45);margin-top:8px;letter-spacing:0.4px">JPG, PNG sau PDF · max 10MB</div>
+
+      <!-- CAS prompt: appears after successful upload -->
+      <div id="postBookCasPrompt" style="display:none;margin-top:14px;padding:14px;background:rgba(184,151,58,0.08);border:1.5px solid rgba(184,151,58,0.3);border-radius:var(--radius)">
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px">Este o cerere pentru analize CAS?</div>
+        <div style="font-size:11px;color:rgba(15,17,23,0.6);margin-bottom:12px;line-height:1.5">Bifează "Da" dacă biletul este pentru analize decontate prin Casa de Asigurări de Sănătate.</div>
+        <div style="display:flex;gap:8px">
+          <button type="button" id="btnCasYes" class="bilet-btn" style="flex:1" onclick="setCasChoice(true)">✓ Da, este CAS</button>
+          <button type="button" id="btnCasNo" class="bilet-btn primary" style="flex:1" onclick="setCasChoice(false)">✗ Nu, particular</button>
+        </div>
+        <div id="postBookCasChoiceLabel" style="display:none;margin-top:10px;font-size:11px;font-weight:600;text-align:center"></div>
+      </div>
     </div>
 
     <!-- Section 2: Add analize manual -->
@@ -1481,9 +1492,14 @@ function openPostBookingFromDetail(progId) {
   postBookState.programareId = progId;
   postBookState.selectedAnalize = [];
   postBookState.biletUploaded = false;
+  postBookState.isCas = null;
 
   // Reset UI
   document.getElementById("postBookBiletStatus").innerHTML = "";
+  document.getElementById("postBookCasPrompt").style.display = "none";
+  document.getElementById("postBookCasChoiceLabel").style.display = "none";
+  document.getElementById("btnCasYes").classList.remove("primary");
+  document.getElementById("btnCasNo").classList.add("primary");
   document.getElementById("analizeSearchInput").value = "";
   document.getElementById("analizeSuggestions").classList.remove("show");
   renderAnalizeTags();
@@ -1499,6 +1515,8 @@ function openPostBookingFromDetail(progId) {
       document.getElementById("postBookBiletStatus").innerHTML =
         '<div style="padding:10px;background:rgba(26,107,60,0.1);border:1px solid rgba(26,107,60,0.3);border-radius:2px;font-size:12px;color:#155a32">' +
         '✓ Bilet deja urcat: <strong>' + progEsc(prog.bilet_filename || "fișier") + '</strong></div>';
+      // Show CAS prompt for already-uploaded bilet (user can choose CAS or particular)
+      document.getElementById("postBookCasPrompt").style.display = "block";
     }
   }
 
@@ -1692,8 +1710,29 @@ var postBookState = {
   ccPriceCatalog: [],  // loaded from cc_preturi
   catalogLoaded: false,
   highlightedIdx: -1,
-  biletUploaded: false
+  biletUploaded: false,
+  isCas: null  // null = nu a ales inca; true = CAS; false = particular
 };
+
+// Set CAS choice (called from DA/NU buttons after upload)
+function setCasChoice(isCas) {
+  postBookState.isCas = isCas;
+  var labelEl = document.getElementById("postBookCasChoiceLabel");
+  var btnYes = document.getElementById("btnCasYes");
+  var btnNo = document.getElementById("btnCasNo");
+  if (isCas) {
+    btnYes.classList.add("primary");
+    btnNo.classList.remove("primary");
+    labelEl.textContent = "✓ Marcat ca analiză CAS";
+    labelEl.style.color = "#1a6b3c";
+  } else {
+    btnNo.classList.add("primary");
+    btnYes.classList.remove("primary");
+    labelEl.textContent = "✓ Marcat ca analiză particulară";
+    labelEl.style.color = "rgba(15,17,23,0.7)";
+  }
+  labelEl.style.display = "block";
+}
 
 async function openPostBookingModal(inviteeUri) {
   // Find the just-created programare for this pacient
@@ -1701,9 +1740,14 @@ async function openPostBookingModal(inviteeUri) {
   postBookState.programareId = null;
   postBookState.selectedAnalize = [];
   postBookState.biletUploaded = false;
+  postBookState.isCas = null;
 
   // Reset UI
   document.getElementById("postBookBiletStatus").innerHTML = "";
+  document.getElementById("postBookCasPrompt").style.display = "none";
+  document.getElementById("postBookCasChoiceLabel").style.display = "none";
+  document.getElementById("btnCasYes").classList.remove("primary");
+  document.getElementById("btnCasNo").classList.add("primary");
   document.getElementById("analizeSearchInput").value = "";
   document.getElementById("analizeSuggestions").classList.remove("show");
   renderAnalizeTags();
@@ -2039,12 +2083,22 @@ async function handlePostBookBiletUpload(ev) {
       '<div style="padding:10px;background:rgba(26,107,60,0.1);border:1px solid rgba(26,107,60,0.3);border-radius:2px;font-size:12px;color:#155a32">' +
       '✓ Bilet urcat: <strong>' + progEsc(file.name) + '</strong></div>';
     showToast("Biletul a fost trimis.");
+
+    // Show CAS prompt (DA/NU buttons) after successful upload
+    document.getElementById("postBookCasPrompt").style.display = "block";
+    // Scroll prompt into view (mobile UX)
+    setTimeout(function() {
+      var promptEl = document.getElementById("postBookCasPrompt");
+      if (promptEl && promptEl.scrollIntoView) {
+        promptEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 100);
   } catch (e) {
     statusEl.innerHTML = '<div style="padding:10px;background:rgba(200,57,43,0.08);border:1px solid rgba(200,57,43,0.3);border-radius:2px;font-size:12px;color:#7a1f15">Eroare: ' + progEsc(e.message || String(e)) + '</div>';
   }
 }
 
-// ─── Save: create pending cerere if analize selected ───
+// ─── Save: dual cerere creation logic + CAS support ───
 async function savePostBookingChoices() {
   var sb = getSb();
   if (!sb) return;
@@ -2055,9 +2109,91 @@ async function savePostBookingChoices() {
 
   try {
     var hasAnalize = postBookState.selectedAnalize.length > 0;
+    var hasBilet = postBookState.biletUploaded;
 
-    if (hasAnalize && postBookState.programareId) {
-      // Build payload similar to admin's processProgramareOcr
+    // Validare: daca a urcat bilet, trebuie sa aleaga CAS (Da/Nu)
+    if (hasBilet && postBookState.isCas === null) {
+      showToast("Te rog alege dacă biletul e CAS sau particular.", true);
+      btn.disabled = false;
+      btn.textContent = "Salvează";
+      // Highlight CAS prompt
+      var promptEl = document.getElementById("postBookCasPrompt");
+      if (promptEl) {
+        promptEl.style.border = "2px solid #c8392b";
+        setTimeout(function() { promptEl.style.border = "1.5px solid rgba(184,151,58,0.3)"; }, 2000);
+        promptEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
+    // Daca nu a facut nimic, doar inchide
+    if (!hasAnalize && !hasBilet) {
+      closePostBookingModal();
+      return;
+    }
+
+    // Verifica sesiune
+    var sessRes = await sb.auth.getSession();
+    var accessToken = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token;
+    if (!accessToken) {
+      throw new Error("Sesiune expirată — te rog reloghează-te pe Carduri.");
+    }
+
+    var nume = (pacientProfile.nume || "").trim();
+    var prenume = (pacientProfile.prenume || "").trim();
+    var emailLower = (pacientProfile.email || "").toLowerCase().trim();
+
+    // Helper: build base payload (shared între cele 2 tipuri)
+    function buildBasePayload() {
+      return {
+        pacient_prenume: prenume,
+        pacient_nume: nume,
+        cnp_pacient: pacientProfile.cnp || null,
+        pacient_email: emailLower || null,
+        pacient_telefon_prefix: pacientProfile.telefon ? "+40" : null,
+        pacient_telefon_numar: pacientProfile.telefon ? String(pacientProfile.telefon).replace(/[\s\-\.]/g, "").replace(/^(\+40|0040|0)/, "") : null,
+        user_id: null,
+        user_email: emailLower || null,
+        status: "pending",
+        programare_id: postBookState.programareId
+      };
+    }
+
+    var createdCereri = [];
+
+    // ═══════════════════════════════════════════════════════════════
+    // CERERE #1: pentru BILET (daca exista)
+    // ═══════════════════════════════════════════════════════════════
+    if (hasBilet) {
+      var biletPayload = Object.assign(buildBasePayload(), {
+        // Cerere goala pentru bilet — admin va rula OCR si va completa items
+        numar_analize: 0,
+        numar_laboratoare: 0,
+        numar_eprubete: 0,
+        total_lista_ron: 0,
+        total_final_ron: 0,
+        economie_ron: 0,
+        items: [],
+        groups: [],
+        eprubete: [],
+        discounts: {},
+        is_cas: !!postBookState.isCas  // CAS flag
+      });
+
+      console.log("[postbook] creating BILET cerere, is_cas=", postBookState.isCas);
+      var biletRpc = await sb.rpc("pacient_create_cerere_pending", { payload: biletPayload });
+      if (biletRpc.error) {
+        console.error("[postbook] bilet RPC error:", biletRpc.error);
+        throw new Error("Eroare la cererea pentru bilet: " + biletRpc.error.message);
+      }
+      console.log("[postbook] BILET cerere id:", biletRpc.data, "is_cas:", postBookState.isCas);
+      createdCereri.push({ id: biletRpc.data, type: "bilet", is_cas: !!postBookState.isCas });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CERERE #2: pentru ANALIZE MANUAL (daca exista)
+    // ═══════════════════════════════════════════════════════════════
+    if (hasAnalize) {
       var items = postBookState.selectedAnalize.map(function(a) {
         return {
           denumire: a.denumire,
@@ -2071,9 +2207,7 @@ async function savePostBookingChoices() {
         };
       });
       var totalLista = items.reduce(function(s, i) { return s + Number(i.pret_lista); }, 0);
-      var totalFinal = totalLista;
 
-      // Build groups by lab — if any manual, group as "—", else "Clinica Central"
       var hasManual = postBookState.selectedAnalize.some(function(a) { return a.manual; });
       var hasCatalog = postBookState.selectedAnalize.some(function(a) { return !a.manual; });
       var groups = [];
@@ -2099,77 +2233,58 @@ async function savePostBookingChoices() {
         });
       }
 
-      var nume = (pacientProfile.nume || "").trim();
-      var prenume = (pacientProfile.prenume || "").trim();
-      var emailLower = (pacientProfile.email || "").toLowerCase().trim();
-
-      var payload = {
-        pacient_prenume: prenume,
-        pacient_nume: nume,
-        cnp_pacient: pacientProfile.cnp || null,
-        pacient_email: emailLower || null,
-        pacient_telefon_prefix: pacientProfile.telefon ? "+40" : null,
-        pacient_telefon_numar: pacientProfile.telefon ? String(pacientProfile.telefon).replace(/[\s\-\.]/g, "").replace(/^(\+40|0040|0)/, "") : null,
-        user_id: null,
-        user_email: emailLower || null,
+      var manualPayload = Object.assign(buildBasePayload(), {
         numar_analize: items.length,
         numar_laboratoare: groups.length,
         numar_eprubete: 0,
         total_lista_ron: Math.round(totalLista * 100) / 100,
-        total_final_ron: Math.round(totalFinal * 100) / 100,
+        total_final_ron: Math.round(totalLista * 100) / 100,
         economie_ron: 0,
         items: items,
         groups: groups,
         eprubete: [],
         discounts: {},
-        status: "pending",
-        programare_id: postBookState.programareId
-      };
-
-      // Use RPC function (SECURITY DEFINER bypasses RLS but validates internally)
-      var sessRes = await sb.auth.getSession();
-      var accessToken = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.access_token;
-      var sessionEmail = sessRes && sessRes.data && sessRes.data.session && sessRes.data.session.user && sessRes.data.session.user.email;
-      console.log("[postbook] session email:", sessionEmail, "| token present:", !!accessToken);
-
-      if (!accessToken) {
-        throw new Error("Sesiune expirată — te rog reloghează-te pe Carduri (refresh pagina + login din nou).");
-      }
-
-      // Add programare_id to payload for RPC
-      var rpcPayload = Object.assign({}, payload, {
-        programare_id: postBookState.programareId
+        is_cas: false  // Analize manuale NU sunt CAS (CAS e doar pentru bilet OCR)
       });
 
-      // Call RPC function
-      var rpcRes = await sb.rpc("pacient_create_cerere_pending", { payload: rpcPayload });
-
-      if (rpcRes.error) {
-        console.error("[postbook] RPC error:", rpcRes.error);
-        console.error("[postbook] payload sent:", rpcPayload);
-        throw new Error(rpcRes.error.message || "Eroare la creare cerere");
+      console.log("[postbook] creating MANUAL cerere with", items.length, "analize");
+      var manualRpc = await sb.rpc("pacient_create_cerere_pending", { payload: manualPayload });
+      if (manualRpc.error) {
+        console.error("[postbook] manual RPC error:", manualRpc.error);
+        // Daca biletul s-a creat dar manual-ul pică, e o stare partial - admin vede biletul oricum
+        if (createdCereri.length > 0) {
+          showToast("Biletul s-a salvat, dar analizele manuale au eșuat: " + manualRpc.error.message, true);
+          closePostBookingModal();
+          loadProgramari();
+          return;
+        }
+        throw new Error("Eroare la cererea cu analize: " + manualRpc.error.message);
       }
+      console.log("[postbook] MANUAL cerere id:", manualRpc.data);
+      createdCereri.push({ id: manualRpc.data, type: "manual", items: items.length });
+    }
 
-      var newCerereId = rpcRes.data;
-      console.log("[postbook] cerere created with id:", newCerereId);
-
-      // Note: RPC function already updates cc_programari (cerere_id + status)
-      // No need for separate PATCH
-
-      showToast("Am salvat " + items.length + " analiză(e). Adminul va vedea cererea ta.");
-    } else if (postBookState.biletUploaded) {
-      // Doar bilet, fara analize manuale — am updatat deja status în handlePostBookBiletUpload
-      showToast("Bilet salvat. Adminul îl va procesa cu OCR.");
-    } else {
-      // Nimic — doar inchide
+    // ═══════════════════════════════════════════════════════════════
+    // Toast feedback
+    // ═══════════════════════════════════════════════════════════════
+    if (createdCereri.length === 2) {
+      var casLabel = postBookState.isCas ? " (CAS)" : "";
+      showToast("Am creat 2 cereri" + casLabel + ": una pentru bilet + una cu " + (createdCereri[1].items || 0) + " analiză(e). Adminul le va prelucra.");
+    } else if (createdCereri.length === 1) {
+      var c = createdCereri[0];
+      if (c.type === "bilet") {
+        var casLabel = c.is_cas ? " (CAS)" : "";
+        showToast("Bilet trimis" + casLabel + ". Adminul va rula OCR.");
+      } else {
+        showToast("Am salvat " + c.items + " analiză(e). Adminul va prelucra cererea.");
+      }
     }
 
     closePostBookingModal();
-    loadProgramari(); // refresh lista pentru a vedea status nou
+    loadProgramari();
   } catch (e) {
+    console.error("[postbook] save error:", e);
     showToast("Eroare la salvare: " + (e.message || e), true);
-    btn.disabled = false;
-    btn.textContent = "Salvează";
   } finally {
     btn.disabled = false;
     btn.textContent = "Salvează";
