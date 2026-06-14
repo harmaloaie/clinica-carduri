@@ -855,6 +855,9 @@ tbody tr:last-child td { border-bottom: none; }
         <div class="discount-pct" id="cardDiscount">—</div>
         <div class="cod" id="cardCod">—</div>
         <span class="nivel-tag" id="cardNivel">—</span>
+        <div id="cardCcDiscountWrap" style="display:none;margin-top:8px;padding:6px 10px;background:rgba(184,151,58,0.18);border-radius:4px;font-size:11px;letter-spacing:0.4px">
+          <span style="opacity:0.7">Discount Clinica Central:</span> <strong id="cardCcDiscount">—</strong>
+        </div>
       </div>
       <div class="qr-box">
         <canvas id="cardQR" width="120" height="120"></canvas>
@@ -1043,10 +1046,54 @@ tbody tr:last-child td { border-bottom: none; }
 <script>
 var pacientProfile = null;
 var allTx = [];
+// CC discount map: array of { card_discount_pct, cc_discount_pct }
+var ccDiscountMap = [];
+
+// Helper: returneaza discount-ul CC pentru un anumit card discount
+function getCcDiscountForCard(cardPct) {
+  if (cardPct == null) return 0;
+  var num = Number(cardPct);
+  if (!isFinite(num) || num <= 0) return 0;
+  for (var i = 0; i < ccDiscountMap.length; i++) {
+    if (Math.abs(Number(ccDiscountMap[i].card_discount_pct) - num) < 0.01) {
+      return Number(ccDiscountMap[i].cc_discount_pct) || 0;
+    }
+  }
+  return 0;
+}
+
+// Helper: aplica discount CC la pret CC (returneaza pret final rotunjit la 2 zecimale)
+function applyCcDiscount(pretLista, cardDiscountPct) {
+  var ccDisc = getCcDiscountForCard(cardDiscountPct);
+  if (ccDisc <= 0) return Number(pretLista) || 0;
+  var p = Number(pretLista) || 0;
+  return Math.round(p * (1 - ccDisc / 100) * 100) / 100;
+}
+
+async function loadCcDiscountMap() {
+  try {
+    var sb = getSb && getSb();
+    if (!sb) return;
+    var res = await sb.from("cc_discount_map")
+      .select("card_discount_pct, cc_discount_pct")
+      .order("card_discount_pct", { ascending: true });
+    if (res.error) {
+      console.warn("[cc_discount_map] load error:", res.error);
+      return;
+    }
+    ccDiscountMap = res.data || [];
+    console.log("[cc_discount_map] loaded:", ccDiscountMap);
+  } catch (e) {
+    console.warn("[cc_discount_map] exception:", e);
+  }
+}
 
 (async function init() {
   pacientProfile = await Clinica.requirePacient();
   if (!pacientProfile) return;
+
+  // Load CC discount map BEFORE rendering card (sa avem maparea cand afisam)
+  await loadCcDiscountMap();
 
   document.getElementById("userEmail").textContent = pacientProfile.email || "—";
 
@@ -1054,6 +1101,13 @@ var allTx = [];
     (pacientProfile.prenume || "") + " " + (pacientProfile.nume || "");
   document.getElementById("cardDiscount").textContent = pacientProfile.discount_pct + "%";
   document.getElementById("cardCod").textContent = pacientProfile.cod_card;
+
+  // Show CC discount on card if applicable
+  var ccDisc = getCcDiscountForCard(pacientProfile.discount_pct);
+  if (ccDisc > 0) {
+    document.getElementById("cardCcDiscount").textContent = ccDisc + "%";
+    document.getElementById("cardCcDiscountWrap").style.display = "block";
+  }
 
   var nivel = pacientProfile.niveluri_discount;
   if (nivel && nivel.denumire) {
@@ -1071,7 +1125,7 @@ var allTx = [];
   document.getElementById("pCod").textContent = pacientProfile.cod_card;
   document.getElementById("pData").textContent = pacientProfile.data_emitere_card || "—";
   document.getElementById("pNivel").textContent =
-    nivel ? (nivel.denumire + " (" + pacientProfile.discount_pct + "%)") : pacientProfile.discount_pct + "%";
+    nivel ? (nivel.denumire + " (" + pacientProfile.discount_pct + "% / CC " + ccDisc + "%)") : pacientProfile.discount_pct + "% / CC " + ccDisc + "%";
 
   if (!pacientProfile.telefon) document.getElementById("pTelefon").classList.add("empty");
 
@@ -1888,11 +1942,18 @@ function renderSuggestions(items) {
     return;
   }
   var html = "";
+  var ccDiscPct = getCcDiscountForCard(pacientProfile && pacientProfile.discount_pct);
   for (var i = 0; i < items.length; i++) {
     var it = items[i];
+    var pretLista = Math.round(Number(it.pret) || 0);
     html += '<div class="sugg-item" data-idx="' + i + '" data-id="' + it.id + '">';
     html += '<span class="sugg-name">' + progEsc(it.denumire) + '</span>';
-    html += '<span class="sugg-price">' + Math.round(it.pret) + ' RON</span>';
+    if (ccDiscPct > 0) {
+      var pretFinal = Math.round(applyCcDiscount(it.pret, pacientProfile.discount_pct));
+      html += '<span class="sugg-price"><s style="opacity:0.5;font-weight:400;margin-right:6px">' + pretLista + '</s><strong style="color:#1a6b3c">' + pretFinal + ' RON</strong></span>';
+    } else {
+      html += '<span class="sugg-price">' + pretLista + ' RON</span>';
+    }
     html += '</div>';
   }
   box.innerHTML = html;
@@ -1957,9 +2018,18 @@ function renderAnalizeTags() {
     return;
   }
   var html = "";
+  var ccDiscPct = getCcDiscountForCard(pacientProfile && pacientProfile.discount_pct);
   for (var i = 0; i < postBookState.selectedAnalize.length; i++) {
     var a = postBookState.selectedAnalize[i];
-    var priceLabel = a.manual ? 'preț la clinică' : (Math.round(a.pret) + ' RON');
+    var priceLabel;
+    if (a.manual) {
+      priceLabel = 'preț la clinică';
+    } else if (ccDiscPct > 0) {
+      var pretFinal = Math.round(applyCcDiscount(a.pret, pacientProfile.discount_pct));
+      priceLabel = '<s style="opacity:0.5;font-weight:400;margin-right:4px">' + Math.round(a.pret) + '</s>' + pretFinal + ' RON';
+    } else {
+      priceLabel = Math.round(a.pret) + ' RON';
+    }
     var tagStyle = a.manual ? ' style="background:rgba(184,151,58,0.12);border-color:rgba(184,151,58,0.4);color:#7a5e1e"' : '';
     html += '<span class="analize-tag" data-id="' + a.id + '"' + tagStyle + '>';
     html += progEsc(a.denumire);
@@ -1971,10 +2041,29 @@ function renderAnalizeTags() {
 }
 
 function updatePostBookTotal() {
-  var total = postBookState.selectedAnalize.reduce(function(s, a) { return s + (Number(a.pret) || 0); }, 0);
+  // Calculeaza total lista si total dupa discount CC (doar pentru analize catalog CC, nu manuale)
+  var totalLista = 0;
+  var totalFinal = 0;
+  var ccDiscPct = getCcDiscountForCard(pacientProfile && pacientProfile.discount_pct);
+  for (var i = 0; i < postBookState.selectedAnalize.length; i++) {
+    var a = postBookState.selectedAnalize[i];
+    var p = Number(a.pret) || 0;
+    totalLista += p;
+    if (a.manual) {
+      // Manual = preț la clinică, n-are CC discount (preț = 0 oricum)
+      totalFinal += p;
+    } else {
+      totalFinal += applyCcDiscount(p, pacientProfile && pacientProfile.discount_pct);
+    }
+  }
   var totalEl = document.getElementById("postBookTotal");
   if (postBookState.selectedAnalize.length > 0) {
-    document.getElementById("postBookTotalVal").textContent = Math.round(total) + " RON";
+    var valEl = document.getElementById("postBookTotalVal");
+    if (ccDiscPct > 0 && totalLista > totalFinal) {
+      valEl.innerHTML = '<s style="opacity:0.5;font-size:14px;font-weight:400;margin-right:6px">' + Math.round(totalLista) + ' RON</s>' + Math.round(totalFinal) + ' RON <small style="font-size:10px;color:rgba(15,17,23,0.55);font-weight:600">(-' + ccDiscPct + '% CC)</small>';
+    } else {
+      valEl.textContent = Math.round(totalFinal) + " RON";
+    }
     totalEl.style.display = "flex";
   } else {
     totalEl.style.display = "none";
@@ -2218,14 +2307,19 @@ async function runOcrForBilet(programareId) {
 
     console.log("[postbook OCR] matched:", matched.length, "unmatched:", unmatched.length);
 
-    // 6. Build items array (matched + unmatched as manual)
+    // 6. Build items array (matched + unmatched as manual) - apply CC discount to matched
+    var ccDiscPctOcr = getCcDiscountForCard(pacientProfile && pacientProfile.discount_pct);
     var items = matched.map(function(m) {
+      var pretLista = Number(m.item.pret) || 0;
+      var pretFinal = ccDiscPctOcr > 0
+        ? Math.round(pretLista * (1 - ccDiscPctOcr / 100) * 100) / 100
+        : pretLista;
       return {
         denumire: m.item.denumire,
         laborator: "Clinica Central",
-        pret_lista: Number(m.item.pret) || 0,
-        pret_final: Number(m.item.pret) || 0,
-        discount: 0,
+        pret_lista: pretLista,
+        pret_final: pretFinal,
+        discount: ccDiscPctOcr,
         timp: null,
         categorie: null,
         detalii: "Extras automat din bilet (OCR)"
@@ -2244,16 +2338,19 @@ async function runOcrForBilet(programareId) {
       });
     }
 
-    // 7. Build groups
+    // 7. Build groups (cu discount aplicat la CC subtotal_final)
     var groups = [];
     if (matched.length > 0) {
-      var ccSubtotal = matched.reduce(function(s, m) { return s + Number(m.item.pret); }, 0);
+      var ccSubtotalLista = matched.reduce(function(s, m) { return s + (Number(m.item.pret) || 0); }, 0);
+      var ccSubtotalFinal = ccDiscPctOcr > 0
+        ? Math.round(ccSubtotalLista * (1 - ccDiscPctOcr / 100) * 100) / 100
+        : ccSubtotalLista;
       groups.push({
         laborator: "Clinica Central",
         numar_analize: matched.length,
-        subtotal_lista: ccSubtotal,
-        subtotal_final: ccSubtotal,
-        economie: 0
+        subtotal_lista: Math.round(ccSubtotalLista * 100) / 100,
+        subtotal_final: ccSubtotalFinal,
+        economie: Math.round((ccSubtotalLista - ccSubtotalFinal) * 100) / 100
       });
     }
     if (unmatched.length > 0) {
@@ -2272,6 +2369,7 @@ async function runOcrForBilet(programareId) {
       groups: groups,
       matchedCount: matched.length,
       unmatchedCount: unmatched.length,
+      ccDiscount: ccDiscPctOcr,
       ocrData: data
     };
   } catch (e) {
@@ -2359,18 +2457,20 @@ async function savePostBookingChoices() {
       var biletItems = ocrResult.success ? ocrResult.items : [];
       var biletGroups = ocrResult.success ? ocrResult.groups : [];
       var biletTotalLista = biletItems.reduce(function(s, i) { return s + Number(i.pret_lista || 0); }, 0);
+      var biletTotalFinal = biletItems.reduce(function(s, i) { return s + Number(i.pret_final || 0); }, 0);
+      var biletCcDisc = ocrResult.ccDiscount || 0;
 
       var biletPayload = Object.assign(buildBasePayload(), {
         numar_analize: biletItems.length,
         numar_laboratoare: biletGroups.length,
         numar_eprubete: 0,
         total_lista_ron: Math.round(biletTotalLista * 100) / 100,
-        total_final_ron: Math.round(biletTotalLista * 100) / 100,
-        economie_ron: 0,
+        total_final_ron: Math.round(biletTotalFinal * 100) / 100,
+        economie_ron: Math.round((biletTotalLista - biletTotalFinal) * 100) / 100,
         items: biletItems,
         groups: biletGroups,
         eprubete: [],
-        discounts: {},
+        discounts: biletCcDisc > 0 ? { cc_discount_pct: biletCcDisc } : {},
         is_cas: !!postBookState.isCas
       });
 
@@ -2397,32 +2497,43 @@ async function savePostBookingChoices() {
     // CERERE #2: pentru ANALIZE MANUAL (daca exista)
     // ═══════════════════════════════════════════════════════════════
     if (hasAnalize) {
+      var ccDiscPctSave = getCcDiscountForCard(pacientProfile && pacientProfile.discount_pct);
       var items = postBookState.selectedAnalize.map(function(a) {
+        var pretLista = Number(a.pret) || 0;
+        var isManualEntry = !!a.manual;
+        var laborator = isManualEntry ? "—" : "Clinica Central";
+        // Discount CC se aplica doar la analize din catalog (laborator='Clinica Central')
+        var pretFinal = (!isManualEntry && ccDiscPctSave > 0)
+          ? Math.round(pretLista * (1 - ccDiscPctSave / 100) * 100) / 100
+          : pretLista;
+        var discountPct = (!isManualEntry && ccDiscPctSave > 0) ? ccDiscPctSave : 0;
         return {
           denumire: a.denumire,
-          laborator: a.manual ? "—" : "Clinica Central",
-          pret_lista: Number(a.pret) || 0,
-          pret_final: Number(a.pret) || 0,
-          discount: 0,
+          laborator: laborator,
+          pret_lista: pretLista,
+          pret_final: pretFinal,
+          discount: discountPct,
           timp: null,
           categorie: null,
-          detalii: a.manual ? "Adăugat manual de pacient" : null
+          detalii: isManualEntry ? "Adăugat manual de pacient" : null
         };
       });
       var totalLista = items.reduce(function(s, i) { return s + Number(i.pret_lista); }, 0);
+      var totalFinal = items.reduce(function(s, i) { return s + Number(i.pret_final); }, 0);
 
       var hasManual = postBookState.selectedAnalize.some(function(a) { return a.manual; });
       var hasCatalog = postBookState.selectedAnalize.some(function(a) { return !a.manual; });
       var groups = [];
       if (hasCatalog) {
         var ccItems = items.filter(function(it) { return it.laborator === "Clinica Central"; });
-        var ccSubtotal = ccItems.reduce(function(s, i) { return s + Number(i.pret_lista); }, 0);
+        var ccSubtotalLista = ccItems.reduce(function(s, i) { return s + Number(i.pret_lista); }, 0);
+        var ccSubtotalFinal = ccItems.reduce(function(s, i) { return s + Number(i.pret_final); }, 0);
         groups.push({
           laborator: "Clinica Central",
           numar_analize: ccItems.length,
-          subtotal_lista: ccSubtotal,
-          subtotal_final: ccSubtotal,
-          economie: 0
+          subtotal_lista: Math.round(ccSubtotalLista * 100) / 100,
+          subtotal_final: Math.round(ccSubtotalFinal * 100) / 100,
+          economie: Math.round((ccSubtotalLista - ccSubtotalFinal) * 100) / 100
         });
       }
       if (hasManual) {
@@ -2441,13 +2552,13 @@ async function savePostBookingChoices() {
         numar_laboratoare: groups.length,
         numar_eprubete: 0,
         total_lista_ron: Math.round(totalLista * 100) / 100,
-        total_final_ron: Math.round(totalLista * 100) / 100,
-        economie_ron: 0,
+        total_final_ron: Math.round(totalFinal * 100) / 100,
+        economie_ron: Math.round((totalLista - totalFinal) * 100) / 100,
         items: items,
         groups: groups,
         eprubete: [],
-        discounts: {},
-        is_cas: false  // Analize manuale NU sunt CAS (CAS e doar pentru bilet OCR)
+        discounts: ccDiscPctSave > 0 ? { cc_discount_pct: ccDiscPctSave } : {},
+        is_cas: false
       });
 
       console.log("[postbook] creating MANUAL cerere with", items.length, "analize");
