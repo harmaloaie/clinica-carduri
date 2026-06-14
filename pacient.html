@@ -1395,6 +1395,7 @@ function renderProgramari() {
     metaParts.push('<span>' + progEsc(serviciu) + '</span>');
     if (p.nume_doctor) metaParts.push('<span>👨‍⚕️ ' + progEsc(p.nume_doctor) + '</span>');
     if (p.bilet_url) metaParts.push('<span>📎 Bilet trimis</span>');
+    if (p.is_cas) metaParts.push('<span style="color:#1a6b3c;font-weight:700">🏥 CAS</span>');
 
     html += '<div class="' + cls.join(" ") + '" data-prog-id="' + p.id + '">';
     html += '<div class="prog-row-date">';
@@ -1439,6 +1440,7 @@ async function openProgModal(id) {
   if (p.nume_doctor) html += '<div class="modal-detail-row"><span class="lbl">Doctor</span><span class="val">' + progEsc(p.nume_doctor) + '</span></div>';
   if (p.note) html += '<div class="modal-detail-row"><span class="lbl">Note</span><span class="val">' + progEsc(p.note) + '</span></div>';
   html += '<div class="modal-detail-row"><span class="lbl">Status</span><span class="val">' + progStatusBadge(p.status).label + '</span></div>';
+  if (p.is_cas) html += '<div class="modal-detail-row"><span class="lbl">Tip</span><span class="val" style="color:#1a6b3c;font-weight:700">🏥 CAS</span></div>';
   html += '</div>';
 
   // Bilet section
@@ -1607,9 +1609,17 @@ async function handleBiletUpload(ev) {
     }).eq("id", selectedProg.id);
     if (updRes.error) throw new Error(updRes.error.message);
 
-    showToast("Biletul a fost trimis. Vei vedea status nou în curând.");
+    showToast("Biletul a fost trimis.");
+
+    // After upload, transition to post-booking modal for CAS choice
+    // (We need to ask: is this CAS or particular?)
+    var savedProgId = selectedProg.id;
     closeProgModal();
     await loadProgramari();
+    // Open post-booking modal so user can choose CAS + maybe add analize
+    setTimeout(function() {
+      openPostBookingFromDetail(savedProgId);
+    }, 400);
   } catch (e) {
     showToast("Eroare upload: " + (e.message || e), true);
     for (var k = 0; k < btns.length; k++) { btns[k].disabled = false; }
