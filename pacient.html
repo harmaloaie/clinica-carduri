@@ -2108,7 +2108,179 @@ async function handlePostBookBiletUpload(ev) {
   }
 }
 
-// ─── Save: dual cerere creation logic + CAS support ───
+// ─── Helper: convert blob to base64 (pentru OCR) ───
+function blobToBase64Pacient(blob) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var result = reader.result;
+      var base64 = result.split(",")[1]; // strip "data:image/xxx;base64," prefix
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// ─── OCR: download bilet → Gemini → match cu cc_preturi ───
+// Returns { success, items, groups, matchedCount, unmatchedCount, reason, ocrData }
+async function runOcrForBilet(programareId) {
+  var sb = getSb();
+  if (!sb) return { success: false, reason: "sb client unavailable", items: [], groups: [] };
+
+  try {
+    // 1. Get bilet path + mime
+    var pRes = await sb.from("cc_programari")
+      .select("bilet_url, bilet_mime_type")
+      .eq("id", programareId)
+      .maybeSingle();
+    if (pRes.error || !pRes.data || !pRes.data.bilet_url) {
+      return { success: false, reason: "bilet lipsa in DB", items: [], groups: [] };
+    }
+    var biletUrl = pRes.data.bilet_url;
+    var mime = pRes.data.bilet_mime_type || "image/jpeg";
+
+    // Skip PDF (OCR pe PDF nu e suportat de Edge Function)
+    if (mime === "application/pdf") {
+      console.warn("[postbook OCR] PDF nu e suportat, skip OCR");
+      return { success: false, reason: "OCR nu suporta PDF", items: [], groups: [] };
+    }
+
+    // 2. Download bilet
+    var dlRes = await sb.storage.from("bilete-programari").download(biletUrl);
+    if (dlRes.error) {
+      return { success: false, reason: "download esuat: " + dlRes.error.message, items: [], groups: [] };
+    }
+    var blob = dlRes.data;
+
+    // 3. Convert to base64
+    var base64 = await blobToBase64Pacient(blob);
+
+    // 4. Call Edge Function ocr-bilet
+    console.log("[postbook OCR] invoking ocr-bilet, base64 length:", base64.length);
+    var ocrRes = await sb.functions.invoke("ocr-bilet", {
+      body: { imageBase64: base64, mediaType: mime }
+    });
+    if (ocrRes.error) {
+      return { success: false, reason: "edge function error: " + (ocrRes.error.message || ocrRes.error), items: [], groups: [] };
+    }
+    var data = ocrRes.data;
+    if (!data || data.error) {
+      return { success: false, reason: "OCR response error: " + (data && data.error ? data.error : "necunoscut"), items: [], groups: [], ocrData: data };
+    }
+    console.log("[postbook OCR] Gemini response:", data);
+
+    var analizeArr = Array.isArray(data.analize) ? data.analize : [];
+    if (analizeArr.length === 0) {
+      return { success: false, reason: "OCR nu a extras nicio analiza", items: [], groups: [], ocrData: data };
+    }
+
+    // 5. Match against cc_preturi catalog (already loaded in postBookState.ccPriceCatalog)
+    if (!postBookState.catalogLoaded || !postBookState.ccPriceCatalog.length) {
+      console.warn("[postbook OCR] Catalog cc_preturi nu e incarcat, force load");
+      await loadCcCatalog();
+    }
+
+    var matched = [];
+    var unmatched = [];
+    for (var i = 0; i < analizeArr.length; i++) {
+      var raw = String(analizeArr[i] || "").trim();
+      if (!raw) continue;
+      var rawNorm = progNormName(raw);
+      var found = null;
+
+      // Pass 1: exact match
+      for (var j = 0; j < postBookState.ccPriceCatalog.length; j++) {
+        var cat = postBookState.ccPriceCatalog[j];
+        var catNorm = cat.denumire_norm || progNormName(cat.denumire);
+        if (catNorm === rawNorm) { found = cat; break; }
+      }
+      // Pass 2: startsWith
+      if (!found) {
+        for (var j2 = 0; j2 < postBookState.ccPriceCatalog.length; j2++) {
+          var cat2 = postBookState.ccPriceCatalog[j2];
+          var catNorm2 = cat2.denumire_norm || progNormName(cat2.denumire);
+          if (catNorm2.indexOf(rawNorm) === 0 || rawNorm.indexOf(catNorm2) === 0) { found = cat2; break; }
+        }
+      }
+      // Pass 3: contains
+      if (!found) {
+        for (var j3 = 0; j3 < postBookState.ccPriceCatalog.length; j3++) {
+          var cat3 = postBookState.ccPriceCatalog[j3];
+          var catNorm3 = cat3.denumire_norm || progNormName(cat3.denumire);
+          if (rawNorm.length >= 4 && (catNorm3.indexOf(rawNorm) >= 0 || rawNorm.indexOf(catNorm3) >= 0)) { found = cat3; break; }
+        }
+      }
+
+      if (found) matched.push({ raw: raw, item: found });
+      else unmatched.push(raw);
+    }
+
+    console.log("[postbook OCR] matched:", matched.length, "unmatched:", unmatched.length);
+
+    // 6. Build items array (matched + unmatched as manual)
+    var items = matched.map(function(m) {
+      return {
+        denumire: m.item.denumire,
+        laborator: "Clinica Central",
+        pret_lista: Number(m.item.pret) || 0,
+        pret_final: Number(m.item.pret) || 0,
+        discount: 0,
+        timp: null,
+        categorie: null,
+        detalii: "Extras automat din bilet (OCR)"
+      };
+    });
+    for (var u = 0; u < unmatched.length; u++) {
+      items.push({
+        denumire: unmatched[u],
+        laborator: "—",
+        pret_lista: 0,
+        pret_final: 0,
+        discount: 0,
+        timp: null,
+        categorie: null,
+        detalii: "Extras din OCR, nu s-a gasit in catalog - verifica manual"
+      });
+    }
+
+    // 7. Build groups
+    var groups = [];
+    if (matched.length > 0) {
+      var ccSubtotal = matched.reduce(function(s, m) { return s + Number(m.item.pret); }, 0);
+      groups.push({
+        laborator: "Clinica Central",
+        numar_analize: matched.length,
+        subtotal_lista: ccSubtotal,
+        subtotal_final: ccSubtotal,
+        economie: 0
+      });
+    }
+    if (unmatched.length > 0) {
+      groups.push({
+        laborator: "—",
+        numar_analize: unmatched.length,
+        subtotal_lista: 0,
+        subtotal_final: 0,
+        economie: 0
+      });
+    }
+
+    return {
+      success: true,
+      items: items,
+      groups: groups,
+      matchedCount: matched.length,
+      unmatchedCount: unmatched.length,
+      ocrData: data
+    };
+  } catch (e) {
+    console.error("[postbook OCR] exception:", e);
+    return { success: false, reason: "exceptie: " + (e.message || e), items: [], groups: [] };
+  }
+}
+
+// ─── Save: dual cerere creation logic + CAS support + OCR automation ───
 async function savePostBookingChoices() {
   var sb = getSb();
   if (!sb) return;
@@ -2170,34 +2342,55 @@ async function savePostBookingChoices() {
     }
 
     var createdCereri = [];
+    var ocrInfo = null;
 
     // ═══════════════════════════════════════════════════════════════
-    // CERERE #1: pentru BILET (daca exista)
+    // CERERE #1: pentru BILET (daca exista) - cu OCR automat
     // ═══════════════════════════════════════════════════════════════
     if (hasBilet) {
+      // Try to run OCR before creating cerere
+      btn.textContent = "Se procesează biletul cu OCR...";
+      console.log("[postbook] running OCR for programare", postBookState.programareId);
+      var ocrResult = await runOcrForBilet(postBookState.programareId);
+      ocrInfo = ocrResult;
+      console.log("[postbook] OCR result:", ocrResult);
+
+      // Build bilet payload (with OCR items or empty if failed)
+      var biletItems = ocrResult.success ? ocrResult.items : [];
+      var biletGroups = ocrResult.success ? ocrResult.groups : [];
+      var biletTotalLista = biletItems.reduce(function(s, i) { return s + Number(i.pret_lista || 0); }, 0);
+
       var biletPayload = Object.assign(buildBasePayload(), {
-        // Cerere goala pentru bilet — admin va rula OCR si va completa items
-        numar_analize: 0,
-        numar_laboratoare: 0,
+        numar_analize: biletItems.length,
+        numar_laboratoare: biletGroups.length,
         numar_eprubete: 0,
-        total_lista_ron: 0,
-        total_final_ron: 0,
+        total_lista_ron: Math.round(biletTotalLista * 100) / 100,
+        total_final_ron: Math.round(biletTotalLista * 100) / 100,
         economie_ron: 0,
-        items: [],
-        groups: [],
+        items: biletItems,
+        groups: biletGroups,
         eprubete: [],
         discounts: {},
-        is_cas: !!postBookState.isCas  // CAS flag
+        is_cas: !!postBookState.isCas
       });
 
-      console.log("[postbook] creating BILET cerere, is_cas=", postBookState.isCas);
+      btn.textContent = "Se salvează cererea...";
+      console.log("[postbook] creating BILET cerere, is_cas=", postBookState.isCas, "items:", biletItems.length);
       var biletRpc = await sb.rpc("pacient_create_cerere_pending", { payload: biletPayload });
       if (biletRpc.error) {
         console.error("[postbook] bilet RPC error:", biletRpc.error);
         throw new Error("Eroare la cererea pentru bilet: " + biletRpc.error.message);
       }
-      console.log("[postbook] BILET cerere id:", biletRpc.data, "is_cas:", postBookState.isCas);
-      createdCereri.push({ id: biletRpc.data, type: "bilet", is_cas: !!postBookState.isCas });
+      console.log("[postbook] BILET cerere id:", biletRpc.data, "is_cas:", postBookState.isCas, "OCR success:", ocrResult.success);
+      createdCereri.push({
+        id: biletRpc.data,
+        type: "bilet",
+        is_cas: !!postBookState.isCas,
+        ocrSuccess: ocrResult.success,
+        matchedCount: ocrResult.matchedCount || 0,
+        unmatchedCount: ocrResult.unmatchedCount || 0,
+        ocrReason: ocrResult.reason
+      });
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -2275,19 +2468,33 @@ async function savePostBookingChoices() {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // Toast feedback
+    // Toast feedback (cu detalii OCR)
     // ═══════════════════════════════════════════════════════════════
-    if (createdCereri.length === 2) {
+    var biletCerere = createdCereri.find(function(c) { return c.type === "bilet"; });
+    var manualCerere = createdCereri.find(function(c) { return c.type === "manual"; });
+
+    if (biletCerere && manualCerere) {
       var casLabel = postBookState.isCas ? " (CAS)" : "";
-      showToast("Am creat 2 cereri" + casLabel + ": una pentru bilet + una cu " + (createdCereri[1].items || 0) + " analiză(e). Adminul le va prelucra.");
-    } else if (createdCereri.length === 1) {
-      var c = createdCereri[0];
-      if (c.type === "bilet") {
-        var casLabel = c.is_cas ? " (CAS)" : "";
-        showToast("Bilet trimis" + casLabel + ". Adminul va rula OCR.");
+      var ocrPart = biletCerere.ocrSuccess
+        ? biletCerere.matchedCount + " analize din bilet"
+        : "bilet pentru verificare manuală";
+      showToast("Am creat 2 cereri" + casLabel + ": " + ocrPart + " + " + (manualCerere.items || 0) + " analize adăugate de tine.");
+    } else if (biletCerere) {
+      var casLabel = biletCerere.is_cas ? " (CAS)" : "";
+      if (biletCerere.ocrSuccess) {
+        if (biletCerere.matchedCount > 0) {
+          var unmatchedNote = biletCerere.unmatchedCount > 0
+            ? " (" + biletCerere.unmatchedCount + " neidentificate)"
+            : "";
+          showToast("Bilet procesat" + casLabel + ": " + biletCerere.matchedCount + " analize identificate" + unmatchedNote + ". Adminul va verifica.");
+        } else {
+          showToast("Bilet trimis" + casLabel + ". OCR nu a identificat analize - adminul va verifica manual.");
+        }
       } else {
-        showToast("Am salvat " + c.items + " analiză(e). Adminul va prelucra cererea.");
+        showToast("Bilet trimis" + casLabel + ". OCR nu a putut procesa biletul - adminul va verifica manual.");
       }
+    } else if (manualCerere) {
+      showToast("Am salvat " + manualCerere.items + " analiză(e). Adminul va prelucra cererea.");
     }
 
     closePostBookingModal();
