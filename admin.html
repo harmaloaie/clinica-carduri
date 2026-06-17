@@ -385,6 +385,25 @@ tbody tr:hover { background: var(--cream); }
   margin-right: 8px;
   border: 1px solid rgba(15,17,23,0.15);
 }
+.tab-badge {
+  display: inline-block; min-width: 18px; padding: 1px 6px;
+  background: var(--accent); color: white; border-radius: 99px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+  margin-left: 6px; vertical-align: middle;
+}
+.ref-chip {
+  display: inline-block; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.05em; color: var(--green);
+  background: rgba(26,107,60,0.08); padding: 1px 6px; border-radius: 4px; margin-top: 4px;
+}
+.cr-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid rgba(15,17,23,0.06); font-size: 13px;
+}
+.cr-row:last-child { border-bottom: none; }
+.cr-amt { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--green); }
+.cr-amt.anulat { color: rgba(15,17,23,0.35); text-decoration: line-through; }
+.cr-niv { display:inline-block; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:700; background:var(--cream); margin-right:6px; }
 .nivel-pct-tag {
   display: inline-block;
   padding: 4px 12px;
@@ -449,6 +468,7 @@ tbody tr:hover { background: var(--cream); }
     <button class="tab" data-tab="parteneri">Parteneri</button>
     <button class="tab" data-tab="receptioneri">Recepționere</button>
     <button class="tab" data-tab="niveluri">Niveluri</button>
+    <button class="tab" data-tab="cereri">Cereri signup <span class="tab-badge" id="cereriBadge" style="display:none">0</span></button>
   </div>
 
   <!-- ════════════════════════════════════════════════════════════ -->
@@ -611,6 +631,46 @@ tbody tr:hover { background: var(--cream); }
     </div>
   </section>
 
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- TAB: CERERI SIGNUP                                            -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <section class="tab-panel" id="panel-cereri">
+
+    <div class="section-head">
+      <h1>Cereri <em>signup</em></h1>
+      <div class="actions">
+        <button class="btn-sm" id="reloadCereriBtn">↻ Reîncarcă</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:16px;margin-bottom:16px;font-size:13px;align-items:center;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:rgba(15,17,23,0.65)">
+        <input type="checkbox" id="showProcesate" style="cursor:pointer">
+        Arată cererile procesate
+      </label>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(15,17,23,0.4)" id="cereriCount">—</span>
+    </div>
+
+    <div id="loadingCereri" class="loading">Se încarcă cererile...</div>
+
+    <div class="table-wrap" id="cereriWrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>Solicitant</th>
+            <th>Contact</th>
+            <th>CNP</th>
+            <th>Recomandat de</th>
+            <th>Data</th>
+            <th>Status</th>
+            <th style="text-align:right">Acțiuni</th>
+          </tr>
+        </thead>
+        <tbody id="cereriTbody"></tbody>
+      </table>
+    </div>
+  </section>
+
 </main>
 
 <!-- Modal: Add/Edit Pacient -->
@@ -672,6 +732,67 @@ tbody tr:hover { background: var(--cream); }
         <button type="submit" class="btn btn-primary" id="modalSave">Salvează</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modal: Aprobare cerere signup -->
+<div class="modal-bg" id="approveModalBg">
+  <div class="modal">
+    <h2>Aprobă <em>cererea</em></h2>
+    <p class="help">Se creează un pacient nou cu card generat automat. Dacă cererea are un cod de recomandare valid, noul pacient e legat de cel care l-a recomandat.</p>
+
+    <div class="banner-error" id="approveError"></div>
+
+    <div id="approveSummary" style="background:var(--cream);border-radius:var(--radius);padding:14px 16px;margin-bottom:18px;font-size:13px;line-height:1.7"></div>
+
+    <div class="field">
+      <label>Nivel discount *</label>
+      <select id="approveNivel" required>
+        <option value="">— Selectează nivel —</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="approveCancel">Anulează</button>
+      <button type="button" class="btn btn-primary" id="approveConfirm">Aprobă & creează pacient</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalii credite pacient -->
+<div class="modal-bg" id="crediteModalBg">
+  <div class="modal" style="max-width:560px">
+    <h2>Portofel <em>pacient</em></h2>
+    <p class="help" id="crediteSub">—</p>
+
+    <div id="crediteLoading" class="loading">Se încarcă...</div>
+
+    <div id="crediteContent" style="display:none">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px">
+        <div style="background:var(--ink);color:white;border-radius:var(--radius);padding:16px">
+          <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.55">Sold disponibil</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:28px;margin-top:6px" id="crSold">—</div>
+        </div>
+        <div style="background:var(--cream);border-radius:var(--radius);padding:16px">
+          <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(15,17,23,0.5)">Total lifetime</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:28px;margin-top:6px" id="crLifetime">—</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:18px;margin-bottom:20px;font-size:12px;font-family:'JetBrains Mono',monospace;color:rgba(15,17,23,0.7)">
+        <span>N1: <strong id="crN1">0</strong></span>
+        <span>N2: <strong id="crN2">0</strong></span>
+        <span>N3: <strong id="crN3">0</strong></span>
+      </div>
+
+      <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(15,17,23,0.5);font-weight:700;margin-bottom:8px">Credite recente</div>
+      <div id="crList"></div>
+      <div id="crEmpty" style="display:none;text-align:center;padding:20px;color:rgba(15,17,23,0.45);font-size:13px">Niciun credit încă.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="crediteClose">Închide</button>
+    </div>
   </div>
 </div>
 
@@ -926,6 +1047,7 @@ var currentEditPartId = null;
   document.getElementById("userEmail").textContent = profile.email;
   await loadNiveluri();    // încarcă întâi nivelurile (necesare pentru dropdown)
   await loadPacienti();
+  refreshCereriBadgeInit();
 })();
 
 async function loadPacienti() {
@@ -989,7 +1111,9 @@ function renderPacienti(list) {
         (!p.activ ? ' <span style="font-size:10px;background:rgba(200,57,43,0.12);color:var(--accent);padding:2px 6px;border-radius:99px;font-family:\'JetBrains Mono\',monospace;letter-spacing:0.05em;text-transform:uppercase;font-weight:700;margin-left:4px">Dezactivat</span>' : '') +
         (p.email ? '<br><span style="font-size:11px;color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(p.email) + '</span>' : '') +
       '</td>' +
-      '<td class="cod">' + Clinica.escapeHtml(p.cod_card) + '</td>' +
+      '<td class="cod">' + Clinica.escapeHtml(p.cod_card) +
+        (p.cod_referral ? '<br><span class="ref-chip">' + Clinica.escapeHtml(p.cod_referral) + '</span>' : '') +
+      '</td>' +
       '<td>' +
         '<span class="nivel-pct-tag" style="background:' + Clinica.escapeHtml(nivelCuloare) + '">' + p.discount_pct + '%</span>' +
         '<span style="margin-left:8px;font-size:12px;color:rgba(15,17,23,0.6)">' + Clinica.escapeHtml(nivelDenumire) + '</span>' +
@@ -1001,6 +1125,7 @@ function renderPacienti(list) {
         (p.activ
           ? '<button data-act="qr" data-id="' + p.id + '">QR</button>' +
             '<button data-act="copy" data-id="' + p.id + '">Copy URL</button>' +
+            '<button data-act="credite" data-id="' + p.id + '">Credite</button>' +
             '<button data-act="edit" data-id="' + p.id + '">Edit</button>' +
             '<button data-act="deactivate" data-id="' + p.id + '" style="color:var(--accent);border-color:var(--accent)">Dezactivează</button>'
           : '<button data-act="reactivate" data-id="' + p.id + '" style="color:var(--green);border-color:var(--green)">Reactivează</button>'
@@ -1018,6 +1143,7 @@ function renderPacienti(list) {
       var act = btn.dataset.act;
       if (act === "qr") showQR(p);
       else if (act === "copy") copyURL(p);
+      else if (act === "credite") openCrediteModal(p);
       else if (act === "edit") openEditModal(p);
       else if (act === "deactivate") await togglePacientActiv(p, false);
       else if (act === "reactivate") await togglePacientActiv(p, true);
@@ -1341,8 +1467,241 @@ document.querySelectorAll(".tab").forEach(function(t) {
       loadParteneriTab();
     } else if (t.dataset.tab === "receptioneri") {
       loadReceptioneriTab();
+    } else if (t.dataset.tab === "cereri") {
+      loadCereri();
     }
   });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// CERERI SIGNUP + CREDITE (referral)
+// ═══════════════════════════════════════════════════════════════
+var allCereri = [];
+var approveTarget = null;
+
+async function refreshCereriBadgeInit() {
+  try {
+    var res = await sb.from("cereri_signup").select("id", { count: "exact", head: true }).eq("status", "pending");
+    if (res.error) return;
+    var n = res.count || 0;
+    var b = document.getElementById("cereriBadge");
+    if (n > 0) { b.textContent = n; b.style.display = "inline-block"; }
+    else b.style.display = "none";
+  } catch (e) { /* silent */ }
+}
+
+async function loadCereri() {
+  var loading = document.getElementById("loadingCereri");
+  var wrap = document.getElementById("cereriWrap");
+  loading.style.display = "flex";
+  loading.textContent = "Se încarcă cererile...";
+  wrap.style.display = "none";
+
+  var res = await sb.from("cereri_signup").select("*").order("created_at", { ascending: false });
+  if (res.error) {
+    console.error("[cereri] load error:", res.error);
+    loading.textContent = "Eroare la încărcarea cererilor.";
+    return;
+  }
+  allCereri = res.data || [];
+  loading.style.display = "none";
+  wrap.style.display = "block";
+  renderCereri();
+  updateCereriBadge();
+}
+
+function cereriStatusBadge(s) {
+  if (s === "pending") return '<span class="nivel-pct-tag" style="background:var(--gold)">În așteptare</span>';
+  if (s === "approved") return '<span class="nivel-pct-tag" style="background:var(--green)">Aprobată</span>';
+  if (s === "rejected") return '<span class="nivel-pct-tag" style="background:var(--accent)">Respinsă</span>';
+  return Clinica.escapeHtml(s || "—");
+}
+
+function updateCereriBadge() {
+  var pending = allCereri.filter(function(c) { return c.status === "pending"; }).length;
+  var b = document.getElementById("cereriBadge");
+  if (pending > 0) { b.textContent = pending; b.style.display = "inline-block"; }
+  else b.style.display = "none";
+}
+
+function renderCereri() {
+  var showAll = document.getElementById("showProcesate").checked;
+  var list = allCereri.filter(function(c) { return showAll || c.status === "pending"; });
+
+  var pending = allCereri.filter(function(c) { return c.status === "pending"; }).length;
+  var proc = allCereri.length - pending;
+  var cnt = pending + " în așteptare";
+  if (proc > 0) cnt += " · " + proc + " procesate";
+  document.getElementById("cereriCount").textContent = cnt;
+
+  var tbody = document.getElementById("cereriTbody");
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty"><h3>Nicio cerere</h3>Cererile de signup self-service apar aici.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(function(c) {
+    var d = c.created_at ? new Date(c.created_at).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" }) : "";
+    var ref = c.cod_referral_used
+      ? '<span class="ref-chip">' + Clinica.escapeHtml(c.cod_referral_used) + '</span>'
+      : '<span style="color:rgba(15,17,23,0.4)">—</span>';
+    var actions = c.status === "pending"
+      ? '<button data-cact="approve" data-id="' + c.id + '" style="color:var(--green);border-color:var(--green)">Aprobă</button>' +
+        '<button data-cact="reject" data-id="' + c.id + '" style="color:var(--accent);border-color:var(--accent)">Respinge</button>'
+      : (c.status === "approved" && c.pacient_id_created
+          ? '<span style="font-size:11px;color:var(--green)">✓ Pacient creat</span>'
+          : (c.rejection_reason ? '<span style="font-size:11px;color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(c.rejection_reason) + '</span>' : '—'));
+
+    return '<tr>' +
+      '<td><strong>' + Clinica.escapeHtml((c.prenume || "") + " " + (c.nume || "")) + '</strong></td>' +
+      '<td style="font-size:12px">' + Clinica.escapeHtml(c.email || "—") +
+        (c.telefon ? '<br><span style="color:rgba(15,17,23,0.5)">' + Clinica.escapeHtml(c.telefon) + '</span>' : '') + '</td>' +
+      '<td class="cod" style="font-size:11px">' + Clinica.escapeHtml(c.cnp || "—") + '</td>' +
+      '<td>' + ref + '</td>' +
+      '<td style="font-size:12px">' + d + '</td>' +
+      '<td>' + cereriStatusBadge(c.status) + '</td>' +
+      '<td><div class="row-actions">' + actions + '</div></td>' +
+    '</tr>';
+  }).join("");
+
+  tbody.querySelectorAll("button[data-cact]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var c = allCereri.find(function(x) { return x.id === btn.dataset.id; });
+      if (!c) return;
+      if (btn.dataset.cact === "approve") openApproveModal(c);
+      else if (btn.dataset.cact === "reject") rejectCerere(c);
+    });
+  });
+}
+
+function fillApproveNivel() {
+  var sel = document.getElementById("approveNivel");
+  sel.innerHTML = '<option value="">— Selectează nivel —</option>';
+  (allNiveluri || []).filter(function(n) { return n.activ; }).forEach(function(n) {
+    var opt = document.createElement("option");
+    opt.value = n.id;
+    opt.dataset.discount = n.discount_pct;
+    opt.textContent = n.denumire + " — " + n.discount_pct + "%";
+    sel.appendChild(opt);
+  });
+}
+
+function openApproveModal(c) {
+  approveTarget = c;
+  var errEl = document.getElementById("approveError");
+  errEl.textContent = ""; errEl.classList.remove("show");
+
+  var refTxt = "fără recomandare";
+  if (c.cod_referral_used) {
+    var ref = (allPacienti || []).find(function(p) { return p.cod_referral === c.cod_referral_used; });
+    refTxt = ref
+      ? Clinica.escapeHtml((ref.prenume || "") + " " + (ref.nume || "")) + " (" + Clinica.escapeHtml(c.cod_referral_used) + ")"
+      : Clinica.escapeHtml(c.cod_referral_used) + " — cod negăsit sau inactiv";
+  }
+
+  document.getElementById("approveSummary").innerHTML =
+    "<strong>" + Clinica.escapeHtml((c.prenume || "") + " " + (c.nume || "")) + "</strong><br>" +
+    Clinica.escapeHtml(c.email || "") + (c.telefon ? " · " + Clinica.escapeHtml(c.telefon) : "") + "<br>" +
+    "Recomandat de: " + refTxt;
+
+  fillApproveNivel();
+  document.getElementById("approveModalBg").classList.add("show");
+}
+
+document.getElementById("approveConfirm").addEventListener("click", async function() {
+  if (!approveTarget) return;
+  var sel = document.getElementById("approveNivel");
+  var nivelId = sel.value;
+  var errEl = document.getElementById("approveError");
+  if (!nivelId) { errEl.textContent = "Selectează un nivel de discount."; errEl.classList.add("show"); return; }
+  var opt = sel.options[sel.selectedIndex];
+  var discount = opt ? Number(opt.dataset.discount) : 0;
+
+  var btn = this;
+  btn.disabled = true; btn.textContent = "Se creează...";
+  var res = await sb.rpc("approve_signup_request", {
+    request_id: approveTarget.id,
+    p_nivel_id: nivelId,
+    p_discount_pct: discount
+  });
+  btn.disabled = false; btn.textContent = "Aprobă & creează pacient";
+
+  if (res.error) {
+    errEl.textContent = "Eroare: " + (res.error.message || "necunoscută");
+    errEl.classList.add("show");
+    return;
+  }
+  var info = res.data || {};
+  document.getElementById("approveModalBg").classList.remove("show");
+  alert("Pacient creat cu cardul " + (info.cod_card || "?"));
+  await loadCereri();
+  await loadPacienti();
+});
+
+async function rejectCerere(c) {
+  var reason = prompt("Motiv respingere (opțional):", "");
+  if (reason === null) return;
+  var res = await sb.rpc("reject_signup_request", { request_id: c.id, p_reason: reason || null });
+  if (res.error) { alert("Eroare: " + (res.error.message || "necunoscută")); return; }
+  await loadCereri();
+}
+
+// ─── Credite modal (per pacient) ───
+async function openCrediteModal(p) {
+  document.getElementById("crediteSub").textContent = (p.prenume || "") + " " + (p.nume || "") + " · " + p.cod_card;
+  document.getElementById("crediteLoading").style.display = "flex";
+  document.getElementById("crediteLoading").textContent = "Se încarcă...";
+  document.getElementById("crediteContent").style.display = "none";
+  document.getElementById("crediteModalBg").classList.add("show");
+  try {
+    var balRes = await sb.from("credite_balanta").select("*").eq("pacient_id", p.id).maybeSingle();
+    if (balRes.error) throw balRes.error;
+    var crRes = await sb.from("credite_referral").select("*").eq("pacient_id", p.id).order("created_at", { ascending: false }).limit(50);
+    if (crRes.error) throw crRes.error;
+    renderCrediteModal(balRes.data, crRes.data || []);
+    document.getElementById("crediteLoading").style.display = "none";
+    document.getElementById("crediteContent").style.display = "block";
+  } catch (e) {
+    console.error("[credite] load error:", e);
+    document.getElementById("crediteLoading").textContent = "Eroare la încărcare.";
+  }
+}
+
+function renderCrediteModal(bal, credite) {
+  bal = bal || {};
+  document.getElementById("crSold").textContent = Clinica.formatRON(bal.sold_valabil || 0);
+  document.getElementById("crLifetime").textContent = Clinica.formatRON(bal.sold_total_lifetime || 0);
+  document.getElementById("crN1").textContent = bal.persoane_nivel_1 || 0;
+  document.getElementById("crN2").textContent = bal.persoane_nivel_2 || 0;
+  document.getElementById("crN3").textContent = bal.persoane_nivel_3 || 0;
+
+  var list = document.getElementById("crList");
+  var empty = document.getElementById("crEmpty");
+  if (!credite.length) { list.innerHTML = ""; empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  list.innerHTML = credite.map(function(c) {
+    var d = c.created_at ? new Date(c.created_at).toLocaleDateString("ro-RO", { day: "2-digit", month: "short" }) : "";
+    var cls = c.status === "anulat" ? "cr-amt anulat" : "cr-amt";
+    var st = c.status === "anulat" ? " · anulat" : (c.status === "folosit" ? " · folosit" : "");
+    return '<div class="cr-row"><div><span class="cr-niv">N' + c.nivel + '</span>' + d + ' · ' + c.procent + '% din ' + Clinica.formatRON(c.suma_baza) + st + '</div>' +
+      '<div class="' + cls + '">+' + Clinica.formatRON(c.suma_credit) + '</div></div>';
+  }).join("");
+}
+
+// ─── Wiring cereri/credite ───
+document.getElementById("reloadCereriBtn").addEventListener("click", loadCereri);
+document.getElementById("showProcesate").addEventListener("change", renderCereri);
+document.getElementById("approveCancel").addEventListener("click", function() {
+  document.getElementById("approveModalBg").classList.remove("show");
+});
+document.getElementById("crediteClose").addEventListener("click", function() {
+  document.getElementById("crediteModalBg").classList.remove("show");
+});
+document.getElementById("approveModalBg").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
+});
+document.getElementById("crediteModalBg").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
 });
 
 // ═══════════════════════════════════════════════════════════════
