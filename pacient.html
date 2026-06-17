@@ -832,6 +832,121 @@ tbody tr:last-child td { border-bottom: none; }
   opacity: 0.5; cursor: not-allowed;
 }
 
+/* ─── PORTOFEL ─── */
+.wallet-hero {
+  background: var(--ink); color: var(--paper);
+  border-radius: var(--radius); padding: 28px 24px;
+  border-left: 4px solid var(--green); margin-bottom: 16px;
+}
+.wallet-hero-label {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgba(248,246,241,0.55); margin-bottom: 10px;
+}
+.wallet-hero-amount {
+  font-family: 'DM Serif Display', serif; font-size: 44px;
+  line-height: 1; color: var(--paper);
+}
+.wallet-hero-sub { font-size: 12px; color: rgba(248,246,241,0.5); margin-top: 10px; }
+
+.wallet-actions { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.wallet-btn {
+  flex: 1; min-width: 150px; padding: 13px 16px;
+  border-radius: var(--radius); font-family: inherit;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  cursor: pointer; border: 1.5px solid var(--ink);
+}
+.wallet-btn-primary { background: var(--green); border-color: var(--green); color: var(--paper); }
+.wallet-btn-secondary { background: white; color: var(--ink); }
+
+.wallet-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.wallet-stat {
+  background: white; border: 1px solid rgba(15,17,23,0.1);
+  border-radius: var(--radius); padding: 16px 10px; text-align: center;
+}
+.wallet-stat-num {
+  font-family: 'DM Serif Display', serif; font-size: 30px;
+  line-height: 1; color: var(--ink);
+}
+.wallet-stat-lbl {
+  font-size: 11px; color: rgba(15,17,23,0.55); margin-top: 8px;
+  letter-spacing: 0.03em;
+}
+.wallet-stat-lbl span {
+  display: block; font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--gold); font-weight: 600; margin-top: 3px;
+}
+
+.wallet-lifetime {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--cream); border-radius: var(--radius);
+  padding: 12px 16px; margin-bottom: 24px; font-size: 13px;
+}
+.wallet-lifetime span { color: rgba(15,17,23,0.6); }
+.wallet-lifetime strong { font-family: 'JetBrains Mono', monospace; color: var(--ink); }
+
+.wallet-credits-head {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: rgba(15,17,23,0.5); margin-bottom: 10px; font-weight: 700;
+}
+.wallet-credit-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; border-bottom: 1px solid rgba(15,17,23,0.07);
+}
+.wallet-credit-row:last-child { border-bottom: none; }
+.wallet-credit-left { font-size: 13px; }
+.wallet-credit-left .wc-name { font-weight: 600; color: var(--ink); }
+.wallet-credit-left .wc-meta { font-size: 11px; color: rgba(15,17,23,0.5); margin-top: 2px; }
+.wc-nivel { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; background: var(--cream); color: var(--ink); margin-right: 6px; }
+.wallet-credit-amount { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--green); }
+.wallet-credit-amount.anulat { color: rgba(15,17,23,0.35); text-decoration: line-through; }
+.wallet-empty {
+  text-align: center; padding: 30px 20px; font-size: 13px;
+  color: rgba(15,17,23,0.5); line-height: 1.6;
+}
+
+/* ─── INVITE MODAL ─── */
+.invite-qr-box {
+  background: white; border: 1px solid rgba(15,17,23,0.1);
+  border-radius: var(--radius); padding: 16px; display: inline-block;
+  margin: 4px auto 18px;
+}
+.invite-qr-box canvas { display: block; width: 200px; height: 200px; }
+.invite-code-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(15,17,23,0.5); }
+.invite-code {
+  font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700;
+  letter-spacing: 0.06em; color: var(--green); margin: 4px 0 18px;
+}
+.invite-link-row { display: flex; gap: 8px; }
+.invite-link-row input {
+  flex: 1; min-width: 0; padding: 10px 12px; font-size: 12px;
+  border: 1px solid rgba(15,17,23,0.18); border-radius: var(--radius);
+  font-family: 'JetBrains Mono', monospace; background: var(--cream); color: var(--ink);
+}
+.invite-copy-btn {
+  padding: 10px 16px; border-radius: var(--radius); border: 1.5px solid var(--ink);
+  background: var(--ink); color: var(--paper); font-weight: 700; font-size: 12px;
+  cursor: pointer; white-space: nowrap;
+}
+.invite-copy-btn.copied { background: var(--green); border-color: var(--green); }
+
+/* ─── HOW-IT-WORKS MODAL ─── */
+.how-step { display: flex; gap: 14px; margin-bottom: 18px; align-items: flex-start; }
+.how-num {
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--green); color: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px;
+}
+.how-step strong { font-size: 14px; color: var(--ink); }
+.how-step p { font-size: 13px; color: rgba(15,17,23,0.65); line-height: 1.55; margin-top: 4px; }
+.how-levels { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.how-levels span {
+  font-size: 12px; color: rgba(15,17,23,0.7);
+  background: var(--cream); border-radius: var(--radius); padding: 8px 10px;
+}
+.how-levels b { color: var(--green); font-family: 'JetBrains Mono', monospace; }
+.how-levels em { color: rgba(15,17,23,0.5); font-style: normal; }
+
 </style>
 </head>
 <body>
@@ -877,6 +992,7 @@ tbody tr:last-child td { border-bottom: none; }
     <button class="tab active" data-tab="istoric">Istoric plăți</button>
     <button class="tab" data-tab="programari">Programări</button>
     <button class="tab" data-tab="oferte">Oferte</button>
+    <button class="tab" data-tab="portofel">Portofel</button>
     <button class="tab" data-tab="profil">Profil</button>
   </div>
 
@@ -916,6 +1032,55 @@ tbody tr:last-child td { border-bottom: none; }
   <section class="tab-panel" id="panel-oferte">
     <div id="loadingOferte" class="loading">Se încarcă ofertele...</div>
     <div id="oferteContainer"></div>
+  </section>
+
+  <!-- PORTOFEL -->
+  <section class="tab-panel" id="panel-portofel">
+    <div id="loadingPortofel" class="loading">Se încarcă portofelul...</div>
+
+    <div id="portofelContent" style="display:none">
+      <!-- Sold -->
+      <div class="wallet-hero">
+        <div class="wallet-hero-label">Sold disponibil</div>
+        <div class="wallet-hero-amount" id="walletSold">—</div>
+        <div class="wallet-hero-sub">Credite din recomandările tale · nu expiră</div>
+      </div>
+
+      <!-- Acțiuni -->
+      <div class="wallet-actions">
+        <button class="wallet-btn wallet-btn-primary" onclick="openInviteModal()">Invită prieteni</button>
+        <button class="wallet-btn wallet-btn-secondary" onclick="openHowModal()">Cum funcționează</button>
+      </div>
+
+      <!-- Statistici rețea -->
+      <div class="wallet-stats">
+        <div class="wallet-stat">
+          <div class="wallet-stat-num" id="walletN1">0</div>
+          <div class="wallet-stat-lbl">Nivel 1<span>1%</span></div>
+        </div>
+        <div class="wallet-stat">
+          <div class="wallet-stat-num" id="walletN2">0</div>
+          <div class="wallet-stat-lbl">Nivel 2<span>0.5%</span></div>
+        </div>
+        <div class="wallet-stat">
+          <div class="wallet-stat-num" id="walletN3">0</div>
+          <div class="wallet-stat-lbl">Nivel 3<span>0.25%</span></div>
+        </div>
+      </div>
+
+      <!-- Lifetime -->
+      <div class="wallet-lifetime">
+        <span>Total acumulat în timp</span>
+        <strong id="walletLifetime">—</strong>
+      </div>
+
+      <!-- Istoric credite -->
+      <div class="wallet-credits-head">Credite recente</div>
+      <div id="walletCreditsList"></div>
+      <div id="walletCreditsEmpty" class="wallet-empty" style="display:none">
+        Încă nu ai credite. Invită prieteni și câștigi din fiecare tranzacție a rețelei tale.
+      </div>
+    </div>
   </section>
 
   <!-- PROFIL -->
@@ -1035,6 +1200,65 @@ tbody tr:last-child td { border-bottom: none; }
     <div class="postbook-actions">
       <button class="btn-secondary" onclick="closePostBookingModal()">Mai târziu</button>
       <button class="btn-primary" id="btnPostBookSave" onclick="savePostBookingChoices()">Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Invită prieteni -->
+<div class="modal-bg" id="modalInvite">
+  <div class="modal-card" style="max-width:420px;text-align:center">
+    <button class="modal-close-x" onclick="closeInviteModal()">&times;</button>
+    <h3>Invită prieteni</h3>
+    <div class="modal-sub">Prietenii scanează codul, își fac cont, iar tu câștigi credite din tranzacțiile lor.</div>
+
+    <div class="invite-qr-box">
+      <canvas id="inviteQR"></canvas>
+    </div>
+
+    <div class="invite-code-label">Codul tău de recomandare</div>
+    <div class="invite-code" id="inviteCode">—</div>
+
+    <div class="invite-link-row">
+      <input type="text" id="inviteLink" readonly>
+      <button class="invite-copy-btn" id="inviteCopyBtn" onclick="copyReferralLink()">Copiază</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Cum funcționează -->
+<div class="modal-bg" id="modalHow">
+  <div class="modal-card" style="max-width:520px">
+    <button class="modal-close-x" onclick="closeHowModal()">&times;</button>
+    <h3>Cum funcționează Portofelul</h3>
+    <div class="modal-sub">Programul de recomandări Cardul Păun — pe scurt.</div>
+
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <div>
+        <strong>Invită prieteni</strong>
+        <p>Trimite-le codul tău sau lasă-i să scaneze QR-ul din „Invită prieteni". Își fac cont, iar contul e legat de tine.</p>
+      </div>
+    </div>
+
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <div>
+        <strong>Câștigi din rețeaua ta, pe 3 niveluri</strong>
+        <p>De fiecare dată când cineva din rețeaua ta face o tranzacție la Clinica Central sau la un partener, primești credite:</p>
+        <div class="how-levels">
+          <span><b>1%</b> din tranzacțiile celor invitați direct de tine <em>(Nivel 1)</em></span>
+          <span><b>0.5%</b> din tranzacțiile prietenilor lor <em>(Nivel 2)</em></span>
+          <span><b>0.25%</b> din tranzacțiile rețelei extinse <em>(Nivel 3)</em></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <div>
+        <strong>Creditele nu expiră</strong>
+        <p>Se adună automat în Portofel. În curând le vei putea folosi la Clinica Central și la partenerii noștri.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1297,6 +1521,7 @@ async function loadOferte() {
 // Tabs
 var oferteLoaded = false;
 var programariLoaded = false;
+var portofelLoaded = false;
 document.querySelectorAll(".tab").forEach(function(t) {
   t.addEventListener("click", function() {
     document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
@@ -1312,7 +1537,146 @@ document.querySelectorAll(".tab").forEach(function(t) {
       programariLoaded = true;
       loadProgramari();
     }
+    if (t.dataset.tab === "portofel" && !portofelLoaded) {
+      portofelLoaded = true;
+      loadPortofel();
+    }
   });
+});
+
+// ════════════════════════════════════════════════════════════════
+// PORTOFEL — credite referral (patient-side)
+// ════════════════════════════════════════════════════════════════
+async function loadPortofel() {
+  var loading = document.getElementById("loadingPortofel");
+  var content = document.getElementById("portofelContent");
+  try {
+    var sb = getSb();
+    var pid = pacientProfile && pacientProfile.id;
+    if (!sb || !pid) throw new Error("Profil indisponibil");
+
+    var balRes = await sb.from("credite_balanta").select("*").eq("pacient_id", pid).maybeSingle();
+    if (balRes.error) throw balRes.error;
+
+    var crRes = await sb.from("credite_referral")
+      .select("*")
+      .eq("pacient_id", pid)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (crRes.error) throw crRes.error;
+
+    renderPortofel(balRes.data, crRes.data || []);
+    loading.style.display = "none";
+    content.style.display = "block";
+  } catch (e) {
+    console.error("[portofel] load error:", e);
+    loading.textContent = "Nu am putut încărca portofelul. Reîncearcă.";
+  }
+}
+
+function renderPortofel(bal, credite) {
+  bal = bal || {};
+  document.getElementById("walletSold").textContent = Clinica.formatRON(bal.sold_valabil || 0);
+  document.getElementById("walletLifetime").textContent = Clinica.formatRON(bal.sold_total_lifetime || 0);
+  document.getElementById("walletN1").textContent = bal.persoane_nivel_1 || 0;
+  document.getElementById("walletN2").textContent = bal.persoane_nivel_2 || 0;
+  document.getElementById("walletN3").textContent = bal.persoane_nivel_3 || 0;
+
+  var list = document.getElementById("walletCreditsList");
+  var empty = document.getElementById("walletCreditsEmpty");
+  if (!credite.length) {
+    list.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  var html = "";
+  for (var i = 0; i < credite.length; i++) {
+    var c = credite[i];
+    var d = c.created_at
+      ? new Date(c.created_at).toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" })
+      : "";
+    var amtCls = c.status === "anulat" ? "wallet-credit-amount anulat" : "wallet-credit-amount";
+    var statusTxt = c.status === "anulat" ? " · anulat" : (c.status === "folosit" ? " · folosit" : "");
+    html +=
+      '<div class="wallet-credit-row">' +
+        '<div class="wallet-credit-left">' +
+          '<div class="wc-name"><span class="wc-nivel">N' + c.nivel + '</span>Tranzacție rețea</div>' +
+          '<div class="wc-meta">' + d + ' · ' + c.procent + '% din ' + Clinica.formatRON(c.suma_baza) + statusTxt + '</div>' +
+        '</div>' +
+        '<div class="' + amtCls + '">+' + Clinica.formatRON(c.suma_credit) + '</div>' +
+      '</div>';
+  }
+  list.innerHTML = html;
+}
+
+// ─── Invite / How modals ───
+function getReferralLink() {
+  var code = (pacientProfile && pacientProfile.cod_referral) ? pacientProfile.cod_referral : "";
+  return window.location.origin + "/signup.html?ref=" + encodeURIComponent(code);
+}
+
+function openInviteModal() {
+  var code = (pacientProfile && pacientProfile.cod_referral) ? pacientProfile.cod_referral : "—";
+  document.getElementById("inviteCode").textContent = code;
+  document.getElementById("inviteLink").value = getReferralLink();
+  document.getElementById("modalInvite").classList.add("show");
+  generateReferralQR(getReferralLink(), "inviteQR");
+}
+function closeInviteModal() { document.getElementById("modalInvite").classList.remove("show"); }
+function openHowModal() { document.getElementById("modalHow").classList.add("show"); }
+function closeHowModal() { document.getElementById("modalHow").classList.remove("show"); }
+
+function copyReferralLink() {
+  var input = document.getElementById("inviteLink");
+  var btn = document.getElementById("inviteCopyBtn");
+  var done = function() {
+    btn.textContent = "Copiat ✓"; btn.classList.add("copied");
+    setTimeout(function() { btn.textContent = "Copiază"; btn.classList.remove("copied"); }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(done).catch(function() {
+      input.select(); document.execCommand("copy"); done();
+    });
+  } else {
+    input.select(); document.execCommand("copy"); done();
+  }
+}
+
+function generateReferralQR(url, canvasId) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (typeof qrcode === 'undefined') {
+    setTimeout(function() { generateReferralQR(url, canvasId); }, 200);
+    return;
+  }
+  try {
+    var qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    var moduleCount = qr.getModuleCount();
+    var size = 200, margin = 2;
+    var totalModules = moduleCount + (margin * 2);
+    var moduleSize = size / totalModules;
+    canvas.width = size; canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+    for (var row = 0; row < moduleCount; row++) {
+      for (var col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillRect((col + margin) * moduleSize, (row + margin) * moduleSize, moduleSize, moduleSize);
+        }
+      }
+    }
+  } catch (e) { console.error("[referral QR]", e); }
+}
+
+// Închidere modal la click pe fundal
+["modalInvite", "modalHow"].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener("click", function(ev) { if (ev.target === el) el.classList.remove("show"); });
 });
 
 // ════════════════════════════════════════════════════════════════
