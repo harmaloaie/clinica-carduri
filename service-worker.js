@@ -12,7 +12,7 @@
 // - Notifică client-ul prin postMessage
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'cc-v1.0.1'; // INCREMENTEAZĂ când faci modificări mari
+const CACHE_VERSION = 'cc-v1.0.2'; // INCREMENTEAZĂ când faci modificări mari
 const CACHE_NAME = `clinica-central-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
