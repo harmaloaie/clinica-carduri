@@ -321,6 +321,16 @@ tbody tr:hover { background: var(--cream); }
 }
 .qr-url-hint strong { color: var(--accent); }
 
+/* ─── QR block title (separă QR reducere de QR referral) ─── */
+.qr-block-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-weight: 700; color: rgba(15,17,23,0.6);
+  margin: 6px 0 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.qr-block-title .ref-chip { margin-top: 0; }
+
 .banner-error {
   background: rgba(200, 57, 43, 0.1);
   border: 1px solid var(--accent);
@@ -802,7 +812,8 @@ tbody tr:hover { background: var(--cream); }
     <h2>Card <em>generat</em></h2>
     <p class="help" id="qrHelp">—</p>
 
-    <!-- QR generat local -->
+    <!-- ═══ QR REDUCERE (card) ═══ -->
+    <div class="qr-block-title">Card reducere</div>
     <div class="qr-section">
       <div class="qr-display">
         <canvas id="qrCanvas"></canvas>
@@ -826,6 +837,32 @@ tbody tr:hover { background: var(--cream); }
         ℹ️ <strong>Important:</strong> NU folosi qr.io sau alte servicii care fac redirect prin domeniul lor — vor strica scanarea.
         QR-ul de mai sus conține URL-ul direct și funcționează 100%.
       </p>
+    </div>
+
+    <!-- ═══ QR REFERRAL (invitație) ═══ -->
+    <div class="qr-block-title" id="qrRefTitle" style="margin-top:22px">
+      Card referral <span class="ref-chip" id="qrRefCode"></span>
+    </div>
+    <div class="qr-section" id="qrRefSection">
+      <div class="qr-display">
+        <canvas id="qrCanvasRef"></canvas>
+      </div>
+      <div class="qr-actions-row">
+        <button type="button" class="btn btn-ghost" id="qrRefDownloadBtn">⬇ Descarcă PNG</button>
+        <button type="button" class="btn btn-ghost" id="qrRefPrintBtn">🖨 Tipărește</button>
+      </div>
+      <div class="qr-url-info" style="margin-top:12px">
+        <div class="qr-url-label">Link invitație (signup referral)</div>
+        <div class="qr-url-box">
+          <code id="qrRefUrl">—</code>
+          <button type="button" class="qr-copy-btn" id="qrRefCopyBtn" title="Copiază link">
+            📋 Copiază
+          </button>
+        </div>
+        <p class="qr-url-hint">
+          Pacientul care scanează ajunge la pagina de înscriere cu codul <strong id="qrRefHintCode"></strong> precompletat. După aprobare, intră în rețeaua de recomandări a acestui pacient.
+        </p>
+      </div>
     </div>
 
     <div class="modal-actions" style="border-top:1px solid rgba(15,17,23,0.1);padding-top:16px;margin-top:20px">
@@ -1174,6 +1211,112 @@ function buildCardURL(codCard) {
   return origin + path + "card.html?id=" + codCard;
 }
 
+function buildSignupURL(codReferral) {
+  // Link-ul de invitație referral → pagina de signup cu codul precompletat
+  var origin = window.location.origin;
+  var path = window.location.pathname.replace(/[^/]*$/, "");
+  return origin + path + "signup.html?ref=" + encodeURIComponent(codReferral);
+}
+
+// Generează un QR pe un canvas dat. Returnează true la succes.
+function renderQRCanvas(canvas, url, size) {
+  size = size || 240;
+  var ctx = canvas.getContext('2d');
+
+  if (typeof qrcode === 'undefined') {
+    canvas.width = size; canvas.height = size;
+    ctx.fillStyle = '#fff8e6'; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#c8392b'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('⚠ shared/qrcode-lib.js', size / 2, size / 2 - 8);
+    ctx.fillText('nu e găsit', size / 2, size / 2 + 10);
+    console.error('qrcode library missing. Upload shared/qrcode-lib.js to GitHub.');
+    return false;
+  }
+
+  try {
+    var qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    var moduleCount = qr.getModuleCount();
+    var margin = 4;
+    var totalModules = moduleCount + (margin * 2);
+    var moduleSize = size / totalModules;
+
+    canvas.width = size; canvas.height = size;
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+    for (var row = 0; row < moduleCount; row++) {
+      for (var col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          var x = (col + margin) * moduleSize;
+          var y = (row + margin) * moduleSize;
+          ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(moduleSize), Math.ceil(moduleSize));
+        }
+      }
+    }
+    return true;
+  } catch (e) {
+    console.error('QR exception:', e);
+    canvas.width = size; canvas.height = size;
+    ctx.fillStyle = '#fff8e6'; ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#c8392b'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('⚠ Eroare generare QR', size / 2, size / 2);
+    return false;
+  }
+}
+
+// Copiere în clipboard cu feedback pe buton
+function copyToClipboard(text, btn) {
+  var orig = btn.textContent;
+  var done = function() {
+    btn.classList.add("copied");
+    btn.textContent = "✓ Copiat!";
+    setTimeout(function() {
+      btn.classList.remove("copied");
+      btn.textContent = orig;
+    }, 1800);
+  };
+  var fallback = function() {
+    var input = document.createElement('input');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    done();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+// Pagină de print pentru QR-ul de referral (invitație)
+function printReferralCard(p, imgData) {
+  var w = window.open("", "_blank", "width=420,height=640");
+  w.document.write(
+    '<html><head><title>Invitație ' + Clinica.escapeHtml(p.cod_referral || "") + '</title>' +
+    '<style>body{margin:0;padding:30px;font-family:sans-serif;text-align:center;color:#0f1117}' +
+    '.brand{font-size:12px;letter-spacing:2px;color:#b8973a;font-weight:bold;margin-bottom:4px}' +
+    'h1{font-family:Georgia,serif;font-size:22px;margin:6px 0}' +
+    '.cta{font-size:15px;font-weight:bold;margin:10px 0 4px}' +
+    'img{display:block;margin:10px auto;max-width:100%}' +
+    '.code{font-family:monospace;font-size:22px;font-weight:bold;color:#1a6b3c;letter-spacing:2px;margin:12px 0}' +
+    '.hint{font-size:12px;color:#666;line-height:1.5;max-width:300px;margin:12px auto 0}' +
+    '@media print{body{padding:10px}}</style></head><body>' +
+    '<div class="brand">CLINICA CENTRAL · CARDUL PĂUN</div>' +
+    '<h1>Invitație de la ' + Clinica.escapeHtml(p.prenume || "") + '</h1>' +
+    '<div class="cta">Scanează și primești Cardul Păun</div>' +
+    '<img src="' + imgData + '" alt="QR referral">' +
+    '<div class="code">' + Clinica.escapeHtml(p.cod_referral || "") + '</div>' +
+    '<div class="hint">Scanează codul, completează o cerere scurtă de înscriere și primești cardul de fidelitate cu reduceri la Clinica Central și la partenerii noștri.</div>' +
+    '<script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>' +
+    '</body></html>'
+  );
+  w.document.close();
+}
+
 // Search + filter active/inactive
 document.getElementById("searchInput").addEventListener("input", applyFilters);
 document.getElementById("showInactive").addEventListener("change", applyFilters);
@@ -1300,97 +1443,48 @@ function showQR(p) {
   document.getElementById("qrUrl").textContent = url;
   document.getElementById("qrModalBg").classList.add("show");
 
+  // ─── 1. QR card reducere ───
   var canvas = document.getElementById("qrCanvas");
+  renderQRCanvas(canvas, url, 240);
 
-  // Verifică că librăria locală e încărcată
-  if (typeof qrcode === 'undefined') {
-    var ctx = canvas.getContext('2d');
-    canvas.width = 240; canvas.height = 240;
-    ctx.fillStyle = '#fff8e6';
-    ctx.fillRect(0, 0, 240, 240);
-    ctx.fillStyle = '#c8392b';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚠ shared/qrcode-lib.js', 120, 100);
-    ctx.fillText('nu e găsit pe server', 120, 120);
-    ctx.font = '11px sans-serif';
-    ctx.fillStyle = '#5a4f30';
-    ctx.fillText('Verifică că ai uploadat', 120, 150);
-    ctx.fillText('fișierul în folderul shared/', 120, 168);
-    console.error('qrcode library missing. Upload shared/qrcode-lib.js to GitHub.');
-    return;
+  // ─── 2. QR referral (invitație) ───
+  var refCanvas = document.getElementById("qrCanvasRef");
+  var refSection = document.getElementById("qrRefSection");
+  var refTitle = document.getElementById("qrRefTitle");
+
+  if (p.cod_referral) {
+    var refUrl = buildSignupURL(p.cod_referral);
+    document.getElementById("qrRefUrl").textContent = refUrl;
+    document.getElementById("qrRefCode").textContent = p.cod_referral;
+    document.getElementById("qrRefHintCode").textContent = p.cod_referral;
+    refSection.style.display = "";
+    if (refTitle) refTitle.style.display = "";
+    renderQRCanvas(refCanvas, refUrl, 240);
+
+    document.getElementById("qrRefCopyBtn").onclick = function() {
+      copyToClipboard(refUrl, document.getElementById("qrRefCopyBtn"));
+    };
+    document.getElementById("qrRefDownloadBtn").onclick = function() {
+      var link = document.createElement("a");
+      link.download = "referral-" + p.cod_referral + ".png";
+      link.href = refCanvas.toDataURL("image/png");
+      link.click();
+    };
+    document.getElementById("qrRefPrintBtn").onclick = function() {
+      printReferralCard(p, refCanvas.toDataURL("image/png"));
+    };
+  } else {
+    // pacient fără cod referral (nu ar trebui să existe după migrare)
+    refSection.style.display = "none";
+    if (refTitle) refTitle.style.display = "none";
   }
 
-  // Generate QR using qrcode-generator API
-  try {
-    // typeNumber=0 means auto-detect, ECC level M = 15% recovery
-    var qr = qrcode(0, 'M');
-    qr.addData(url);
-    qr.make();
-
-    // Render to canvas manually (qrcode-generator doesn't have toCanvas)
-    var moduleCount = qr.getModuleCount();
-    var size = 240;
-    var margin = 4; // în module
-    var totalModules = moduleCount + (margin * 2);
-    var moduleSize = size / totalModules;
-
-    canvas.width = size;
-    canvas.height = size;
-    var ctx = canvas.getContext('2d');
-
-    // Background alb
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, size, size);
-
-    // Module negre
-    ctx.fillStyle = '#000000';
-    for (var row = 0; row < moduleCount; row++) {
-      for (var col = 0; col < moduleCount; col++) {
-        if (qr.isDark(row, col)) {
-          var x = (col + margin) * moduleSize;
-          var y = (row + margin) * moduleSize;
-          ctx.fillRect(Math.floor(x), Math.floor(y), Math.ceil(moduleSize), Math.ceil(moduleSize));
-        }
-      }
-    }
-  } catch(e) {
-    console.error('QR exception:', e);
-    var ctx = canvas.getContext('2d');
-    canvas.width = 240; canvas.height = 240;
-    ctx.fillStyle = '#fff8e6';
-    ctx.fillRect(0, 0, 240, 240);
-    ctx.fillStyle = '#c8392b';
-    ctx.font = 'bold 14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚠ Eroare generare QR', 120, 110);
-    ctx.font = '11px sans-serif';
-    ctx.fillText(e.message || 'Eroare necunoscută', 120, 140);
-  }
-
-  // Copy URL button
+  // Copy URL button (card reducere)
   document.getElementById("qrCopyBtn").onclick = function() {
-    navigator.clipboard.writeText(url).then(function() {
-      var btn = document.getElementById("qrCopyBtn");
-      btn.classList.add("copied");
-      btn.textContent = "✓ Copiat!";
-      setTimeout(function() {
-        btn.classList.remove("copied");
-        btn.textContent = "📋 Copiază";
-      }, 1800);
-    }).catch(function() {
-      // Fallback for older browsers
-      var input = document.createElement('input');
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
-      alert('URL copiat: ' + url);
-    });
+    copyToClipboard(url, document.getElementById("qrCopyBtn"));
   };
 
-  // Download PNG
+  // Download PNG (card reducere)
   document.getElementById("qrDownloadBtn").onclick = function() {
     var link = document.createElement("a");
     link.download = "qr-" + p.cod_card + ".png";
@@ -1398,7 +1492,7 @@ function showQR(p) {
     link.click();
   };
 
-  // Print
+  // Print (card reducere)
   document.getElementById("qrPrintBtn").onclick = function() {
     var imgData = canvas.toDataURL("image/png");
     var w = window.open("", "_blank", "width=400,height=600");
