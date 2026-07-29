@@ -947,6 +947,38 @@ tbody tr:last-child td { border-bottom: none; }
 .how-levels b { color: var(--green); font-family: 'JetBrains Mono', monospace; }
 .how-levels em { color: rgba(15,17,23,0.5); font-style: normal; }
 
+
+/* ─── Rezultate (raport CC pacient) ─── */
+.rez-pdf-btn { padding: 12px 22px; background: #1a6b3c; color: #fff; border: none; border-radius: 3px; font-family: inherit; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
+.rez-pdf-btn:hover { background: #14562f; }
+.rez-pdf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#rezDoc { overflow-x: auto; }
+.rez-cover { width: 794px; max-width: 100%; margin: 0 auto; background: #fff; color: #0f1117; font-family: 'DM Sans', sans-serif; box-shadow: 0 6px 24px rgba(15,17,23,0.12); }
+.rez-cover-band { background: #0f1117; color: #fff; padding: 22px 32px; border-bottom: 4px solid #1a6b3c; display: flex; align-items: center; gap: 18px; }
+.rez-cover-band img { height: 54px; width: auto; background: #fff; border-radius: 4px; padding: 4px; }
+.rez-cover-band .t1 { font-family: 'DM Serif Display', serif; font-size: 24px; line-height: 1; }
+.rez-cover-band .t2 { font-size: 11px; letter-spacing: 0.14em; color: #b8973a; margin-top: 6px; text-transform: uppercase; }
+.rez-cover-in { padding: 28px 32px 34px; }
+.rez-cover-h { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 4px; }
+.rez-cover-sub { font-size: 12px; color: rgba(15,17,23,0.5); margin-bottom: 20px; font-family: 'JetBrains Mono', monospace; }
+.rez-cover-pat { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; background: #f8f6f1; border-left: 3px solid #1a6b3c; border-radius: 3px; padding: 14px 18px; margin-bottom: 22px; font-size: 13px; }
+.rez-cover-pat .k { color: rgba(15,17,23,0.5); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.rez-cover-pat .v { font-weight: 600; margin-bottom: 6px; }
+.rez-cover-antet { font-size: 13px; line-height: 1.6; color: rgba(15,17,23,0.8); margin-bottom: 20px; }
+.rez-cover-st { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #1a6b3c; font-weight: 700; border-bottom: 1px solid rgba(15,17,23,0.12); padding-bottom: 6px; margin-bottom: 12px; }
+.rez-cover-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+.rez-cover-table thead th { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(15,17,23,0.55); font-weight: 600; padding: 6px 8px; border-bottom: 1.5px solid #0f1117; }
+.rez-cover-table thead th:nth-child(2), .rez-cover-table thead th:nth-child(3) { text-align: right; }
+.rez-cover-table tbody td { padding: 6px 8px; border-bottom: 1px solid rgba(15,17,23,0.08); font-size: 12.5px; vertical-align: top; }
+.rez-td-den { color: #0f1117; font-weight: 500; }
+.rez-td-val { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700; white-space: nowrap; }
+.rez-td-val.rez-hi { color: #c8392b; } .rez-td-val.rez-lo { color: #b8973a; }
+.rez-td-um { text-align: right; color: rgba(15,17,23,0.55); font-size: 11px; white-space: nowrap; }
+.rez-td-int { color: rgba(15,17,23,0.55); font-size: 11px; }
+.rez-cover-foot { margin-top: 24px; padding-top: 14px; border-top: 2px solid #0f1117; font-size: 11.5px; line-height: 1.6; color: rgba(15,17,23,0.7); }
+.rez-cover-foot strong { color: #0f1117; }
+.rez-note { font-size: 11px; color: rgba(15,17,23,0.6); margin-top: 10px; font-style: italic; }
+.rez-cover-sign { margin-top: 18px; font-size: 11px; color: rgba(15,17,23,0.5); }
 </style>
 </head>
 <body>
@@ -994,6 +1026,7 @@ tbody tr:last-child td { border-bottom: none; }
     <button class="tab" data-tab="oferte">Oferte</button>
     <button class="tab" data-tab="portofel">Portofel</button>
     <button class="tab" data-tab="profil">Profil</button>
+    <button class="tab" data-tab="rezultate">Rezultate</button>
   </div>
 
   <!-- ISTORIC -->
@@ -1114,6 +1147,20 @@ tbody tr:last-child td { border-bottom: none; }
     <div class="profile-note">
       Pentru modificări la profil (telefon, email, etc.), contactează clinica direct.
       Datele tale sunt protejate conform GDPR.
+    </div>
+  </section>
+
+  <section class="tab-panel" id="panel-rezultate">
+    <div id="loadingRez" class="loading">Se încarcă rezultatele...</div>
+    <div id="rezEmpty" style="display:none;text-align:center;padding:48px 20px;color:rgba(15,17,23,0.55)">
+      <div style="font-size:15px">Nu ai încă rezultate disponibile.</div>
+      <div style="font-size:13px;margin-top:6px">Când analizele tale sunt gata, le vei vedea aici.</div>
+    </div>
+    <div id="rezWrap" style="display:none">
+      <div id="rezDoc"></div>
+      <div style="text-align:right;margin-top:16px">
+        <button type="button" class="rez-pdf-btn" id="rezPdfBtn">⬇ Descarcă PDF</button>
+      </div>
     </div>
   </section>
 
@@ -1265,6 +1312,8 @@ tbody tr:last-child td { border-bottom: none; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="shared/qrcode-lib.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="shared/config.js"></script>
 <script src="shared/supabase-client.js"></script>
 <script>
@@ -1522,6 +1571,7 @@ async function loadOferte() {
 var oferteLoaded = false;
 var programariLoaded = false;
 var portofelLoaded = false;
+var rezLoaded = false;
 document.querySelectorAll(".tab").forEach(function(t) {
   t.addEventListener("click", function() {
     document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
@@ -1541,8 +1591,151 @@ document.querySelectorAll(".tab").forEach(function(t) {
       portofelLoaded = true;
       loadPortofel();
     }
+    if (t.dataset.tab === "rezultate" && !rezLoaded) {
+      rezLoaded = true;
+      loadRezultate();
+    }
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// REZULTATE — pacientul își vede rezultatele (raport CC + PDF)
+// ════════════════════════════════════════════════════════════════
+var rezRows = [];
+
+async function loadRezultate() {
+  var loading = document.getElementById("loadingRez");
+  var wrap = document.getElementById("rezWrap");
+  var empty = document.getElementById("rezEmpty");
+  loading.style.display = "flex"; wrap.style.display = "none"; empty.style.display = "none";
+  try {
+    var res = await window.sb.rpc("pacient_get_rezultate");
+    if (res.error) throw res.error;
+    rezRows = Array.isArray(res.data) ? res.data : [];
+  } catch (e) {
+    console.error("[rez] load", e);
+    rezRows = [];
+  }
+  loading.style.display = "none";
+
+  var hasValues = rezRows.some(function(r){ return Array.isArray(r.rezultate_json) && r.rezultate_json.length; });
+  if (!rezRows.length || !hasValues) { empty.style.display = "block"; return; }
+
+  document.getElementById("rezDoc").innerHTML = buildRezReportHtml();
+  wrap.style.display = "block";
+}
+
+function buildRezReportHtml() {
+  var esc = Clinica.escapeHtml;
+  var p = pacientProfile || {};
+  var fullName = ((p.prenume || "") + " " + (p.nume || "")).trim() || "—";
+  var tel = p.telefon || "—";
+
+  var all = [];
+  rezRows.forEach(function(r){ if (Array.isArray(r.rezultate_json)) r.rezultate_json.forEach(function(x){ all.push(x); }); });
+
+  var rowsHtml = all.length ? all.map(function(x){
+    var flagCls = x.flag === "ridicat" ? " rez-hi" : (x.flag === "scazut" ? " rez-lo" : "");
+    var mark = x.flag === "ridicat" ? " ↑" : (x.flag === "scazut" ? " ↓" : "");
+    return '<tr><td class="rez-td-den">' + esc(x.denumire || "") + '</td>' +
+      '<td class="rez-td-val' + flagCls + '">' + esc(x.rezultat || "") + mark + '</td>' +
+      '<td class="rez-td-um">' + esc(x.um || "") + '</td>' +
+      '<td class="rez-td-int">' + esc(x.interval || "") + '</td></tr>';
+  }).join("") : '<tr><td colspan="4" style="text-align:center;color:rgba(15,17,23,0.5);padding:16px">Rezultatele sunt în procesare.</td></tr>';
+
+  var labs = {};
+  rezRows.forEach(function(r){ if (r.laborator) labs[r.laborator] = r.doctor_nume || null; });
+  var labMed = Object.keys(labs).map(function(l){ return esc(l) + (labs[l] ? " (" + esc(labs[l]) + ")" : ""); }).join(", ");
+  var dateStr = new Date().toLocaleDateString("ro-RO");
+
+  return '' +
+  '<div class="rez-cover">' +
+    '<div class="rez-cover-band">' +
+      '<img src="icons/icon-192.png" alt="logo" crossorigin="anonymous">' +
+      '<div><div class="t1">Clinica Central</div><div class="t2">Buletin de rezultate analize</div></div>' +
+    '</div>' +
+    '<div class="rez-cover-in">' +
+      '<div class="rez-cover-h">Rezultatele analizelor</div>' +
+      '<div class="rez-cover-sub">Document generat: ' + esc(dateStr) + '</div>' +
+      '<div class="rez-cover-pat">' +
+        '<div><div class="k">Pacient</div><div class="v">' + esc(fullName) + '</div></div>' +
+        '<div><div class="k">Card</div><div class="v">' + esc(p.cod_card || "—") + '</div></div>' +
+        '<div><div class="k">Telefon</div><div class="v">' + esc(tel) + '</div></div>' +
+        '<div><div class="k">Email</div><div class="v">' + esc(p.email || "—") + '</div></div>' +
+      '</div>' +
+      '<div class="rez-cover-antet">Rezultatele analizelor tale efectuate prin Clinica Central.</div>' +
+      '<div class="rez-cover-st">Rezultate</div>' +
+      '<table class="rez-cover-table"><thead><tr>' +
+        '<th>Analiză</th><th>Rezultat</th><th>UM</th><th>Interval referință</th>' +
+      '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+      '<div class="rez-cover-foot">' +
+        '<strong>Prelucrat în laboratoarele:</strong> ' + labMed + '.' +
+        '<div class="rez-note">Rezultatele se interpretează în context clinic de către medicul curant. Rezultatele originale pot fi ridicate și de la laborator, la cerere.</div>' +
+        '<div class="rez-cover-sign"><span>Clinica Central · Pitești</span></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+async function downloadRezPdf() {
+  var coverEl = document.querySelector("#rezDoc .rez-cover");
+  var btn = document.getElementById("rezPdfBtn");
+  if (!coverEl) return;
+  var orig = btn.textContent;
+  btn.disabled = true; btn.textContent = "Se generează...";
+  try {
+    var canvas = await html2canvas(coverEl, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+    var srcCtx = canvas.getContext("2d");
+    var PDFDocument = PDFLib.PDFDocument;
+    var A4 = [595.28, 841.89];
+    var out = await PDFDocument.create();
+    var pageW = canvas.width;
+    var pageH = Math.round(pageW * (297 / 210));
+    function rowIsWhite(yy) {
+      try {
+        var d = srcCtx.getImageData(0, yy, pageW, 1).data;
+        for (var i = 0; i < d.length; i += 32) { if (d[i] < 244 || d[i+1] < 244 || d[i+2] < 244) return false; }
+        return true;
+      } catch (e) { return true; }
+    }
+    function safeCut(target, minY) { for (var yy = target; yy > minY; yy--) { if (rowIsWhite(yy)) return yy; } return target; }
+    var y = 0;
+    while (y < canvas.height) {
+      var target = Math.min(y + pageH, canvas.height);
+      var cut = (target >= canvas.height) ? canvas.height : safeCut(target, y + Math.floor(pageH * 0.5));
+      var sliceH = cut - y;
+      var tmp = document.createElement("canvas");
+      tmp.width = pageW; tmp.height = pageH;
+      var ctx = tmp.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, pageW, pageH);
+      ctx.drawImage(canvas, 0, y, pageW, sliceH, 0, 0, pageW, sliceH);
+      var png = await out.embedPng(tmp.toDataURL("image/png"));
+      out.addPage(A4).drawImage(png, { x: 0, y: 0, width: A4[0], height: A4[1] });
+      y = cut;
+    }
+    var bytes = await out.save();
+    var blob = new Blob([bytes], { type: "application/pdf" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "Rezultate-CC.pdf"; a.click();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
+  } catch (e) {
+    console.error("[rez] pdf", e);
+    alert("Eroare la generarea PDF: " + (e.message || e));
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+(function(){
+  var b = document.getElementById("rezPdfBtn");
+  if (b) b.addEventListener("click", downloadRezPdf);
+  // deschide direct tab-ul Rezultate dacă vii din emailul de notificare (#rezultate)
+  if (location.hash === "#rezultate") {
+    var rt = document.querySelector('.tab[data-tab="rezultate"]');
+    if (rt) rt.click();
+  }
+})();
 
 // ════════════════════════════════════════════════════════════════
 // PORTOFEL — credite referral (patient-side)
