@@ -1627,9 +1627,16 @@ async function loadRezultate() {
 
 function buildRezReportHtml() {
   var esc = Clinica.escapeHtml;
+  // Datele pacientului din cerere (via RPC) — identic cu raportul din app-ul cerere
+  var src = rezRows[0] || {};
   var p = pacientProfile || {};
-  var fullName = ((p.prenume || "") + " " + (p.nume || "")).trim() || "—";
-  var tel = p.telefon || "—";
+  var fullName = ([src.pacient_prenume, src.pacient_nume].filter(Boolean).join(" ").trim())
+    || ((p.prenume || "") + " " + (p.nume || "")).trim() || "—";
+  var cnp = src.cnp_pacient || p.cnp || "—";
+  var tel = (src.pacient_telefon_numar
+      ? ((src.pacient_telefon_prefix || "") + " " + src.pacient_telefon_numar).trim()
+      : (p.telefon || "")) || "—";
+  var email = src.pacient_email || p.email || "—";
 
   var all = [];
   rezRows.forEach(function(r){ if (Array.isArray(r.rezultate_json)) r.rezultate_json.forEach(function(x){ all.push(x); }); });
@@ -1659,9 +1666,9 @@ function buildRezReportHtml() {
       '<div class="rez-cover-sub">Document generat: ' + esc(dateStr) + '</div>' +
       '<div class="rez-cover-pat">' +
         '<div><div class="k">Pacient</div><div class="v">' + esc(fullName) + '</div></div>' +
-        '<div><div class="k">Card</div><div class="v">' + esc(p.cod_card || "—") + '</div></div>' +
+        '<div><div class="k">CNP</div><div class="v">' + esc(cnp) + '</div></div>' +
         '<div><div class="k">Telefon</div><div class="v">' + esc(tel) + '</div></div>' +
-        '<div><div class="k">Email</div><div class="v">' + esc(p.email || "—") + '</div></div>' +
+        '<div><div class="k">Email</div><div class="v">' + esc(email) + '</div></div>' +
       '</div>' +
       '<div class="rez-cover-antet">Rezultatele analizelor tale efectuate prin Clinica Central.</div>' +
       '<div class="rez-cover-st">Rezultate</div>' +
